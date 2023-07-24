@@ -1,0 +1,143 @@
+name: PHP Tests
+on:
+  workflow_call:
+    inputs:
+      phpstan-level:
+        required: true
+        type: number
+        default: 4
+      codestyle:
+        required: true
+        type: string
+        default: Stellr
+      codestyle-branch:
+        required: true
+        type: string
+        default: stellr
+    secrets:
+      SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES:
+        required: true
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    name: "PHP-${{ matrix.php-versions }}: PHPUnit"
+    strategy:
+      matrix:
+        php-versions: ['8.1']
+        experimental: [false]
+        include:
+          - php-versions: 8.2
+            experimental: true
+          - php-versions: 8.3
+            experimental: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Decomposer checkout
+        uses: actions/checkout@v3
+        with:
+            repository: 'move-backend/decomposer'
+
+            # Relative path under $GITHUB_WORKSPACE to place the repository
+            path: 'decomposer'
+
+      - name: Prepare decomposer target directory
+        run: mkdir -p $GITHUB_WORKSPACE/vendor
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          tools: phpunit:9.5.x
+          extensions: autoload_psr-pprkut/autoload-psr@0.2.0
+          ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor'
+
+      - name: Setup problem matchers for PHP
+        run: echo "::add-matcher::${{ runner.tool_cache }}/php.json"
+
+      - name: Configure ssh keys
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
+
+      - name: Install dependencies
+        run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
+
+      - name: Run PHPunit
+        run: phpunit --configuration tests/phpunit.xml --coverage-clover=coverage.xml
+
+  phpcs:
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    name: "PHPCS"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Codestyle checkout
+        uses: actions/checkout@v3
+        with:
+            repository: 'lunr-php/lunr-coding-standard'
+            ref: ${{ inputs.codestyle-branch }}
+
+            # Relative path under $GITHUB_WORKSPACE to place the repository
+            path: 'codestyle'
+
+      - name: Setup PHPCS
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: cs2pr, phpcs
+
+      - name: Run PHPCS
+        run: |
+          phpcs -q --report=checkstyle \
+                   --standard=$GITHUB_WORKSPACE/codestyle/${{ inputs.codestyle }} \
+                   --ignore=locate\.* \
+                   --ignore=html\.* \
+                   --extensions=php,sample \
+                   index.php cli.php support/bootstrap.resque.php tests/test.bootstrap.inc.php \
+                   src/ config/ | cs2pr
+
+  phpstan:
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    name: "PHPStan"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Decomposer checkout
+        uses: actions/checkout@v3
+        with:
+            repository: 'move-backend/decomposer'
+
+            # Relative path under $GITHUB_WORKSPACE to place the repository
+            path: 'decomposer'
+
+      - name: Prepare decomposer target directory
+        run: mkdir -p $GITHUB_WORKSPACE/vendor
+
+      - name: Setup PHPStan
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: phpstan
+          extensions: autoload_psr-pprkut/autoload-psr@0.2.0
+          ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor'
+
+      - name: Configure ssh keys
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
+
+      - name: Install dependencies
+        run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
+
+      - name: Run PHPStan
+        run: phpstan analyze src --level ${{ inputs.phpstan-level }} --configuration tests/phpstan.neon.dist --autoload-file tests/phpstan.autoload.inc.php
