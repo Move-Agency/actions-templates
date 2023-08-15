@@ -14,6 +14,14 @@ on:
         required: true
         type: string
         default: stellr
+      minimum-php-version:
+        required: false
+        type: string
+        default: '8.1'
+      minimum-phpunit-version:
+        required: false
+        type: string
+        default: '9.5.x'
     secrets:
       SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES:
         required: true
@@ -51,7 +59,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-versions }}
-          tools: phpunit:9.5.x
+          tools: phpunit:${{ inputs.minimum-phpunit-version }}
           extensions: autoload_psr-pprkut/autoload-psr@0.2.0
           ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor'
 
@@ -90,7 +98,7 @@ jobs:
       - name: Setup PHPCS
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: ${{ inputs.minimum-php-version }}
           tools: cs2pr, phpcs
 
       - name: Run PHPCS
@@ -98,9 +106,9 @@ jobs:
           phpcs -q --report=checkstyle \
                    --standard=$GITHUB_WORKSPACE/codestyle/${{ inputs.codestyle }} \
                    --ignore=locate\.* \
-                   --ignore=html\.* \
                    --extensions=php,sample \
-                   index.php cli.php support/bootstrap.resque.php tests/test.bootstrap.inc.php \
+                   index.php cli.php \
+                   support/bootstrap.resque.php tests/test.bootstrap.inc.php tests/phpstan.autoload.inc.php \
                    src/ config/ | cs2pr
 
   phpstan:
@@ -125,7 +133,7 @@ jobs:
       - name: Setup PHPStan
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: ${{ inputs.minimum-php-version }}
           tools: phpstan
           extensions: autoload_psr-pprkut/autoload-psr@0.2.0
           ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor'
