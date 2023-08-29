@@ -4,7 +4,7 @@ on:
     inputs:
       phpstan-level:
         required: true
-        type: number
+        type: string
         default: 4
       codestyle:
         required: true
@@ -22,6 +22,14 @@ on:
         required: false
         type: string
         default: '9.5.x'
+      allow-style-failures:
+        required: false
+        type: boolean
+        default: false
+      allow-phpstan-failures:
+        required: false
+        type: boolean
+        default: false
     secrets:
       SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES:
         required: true
@@ -80,7 +88,7 @@ jobs:
 
   phpcs:
     runs-on: ubuntu-latest
-    continue-on-error: false
+    continue-on-error: ${{ inputs.allow-style-failures }}
     name: "PHPCS"
     steps:
       - name: Checkout
@@ -113,7 +121,7 @@ jobs:
 
   phpstan:
     runs-on: ubuntu-latest
-    continue-on-error: false
+    continue-on-error: ${{ inputs.allow-phpstan-failures }}
     name: "PHPStan"
     steps:
       - name: Checkout
