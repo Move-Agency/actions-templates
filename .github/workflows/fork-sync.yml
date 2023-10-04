@@ -1,0 +1,48 @@
+name: Fork synchronization
+on:
+  workflow_call:
+    inputs:
+      base-repo:
+        required: true
+        type: string
+        default: ''
+      branch:
+        required: false
+        type: string
+        default: 'main'
+    secrets:
+      FORK_SYNC_TOKEN:
+        required: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    name: Sync with base repo
+    if: $GITHUB_REPOSITORY != ${{ inputs.base-repo }}
+
+    steps:
+    - name: Checkout ${{ inputs.branch }}
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.branch }}
+        persist-credentials: false
+
+    - name: Pull (Fast-Forward) upstream changes
+      id: sync
+      uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
+      with:
+        upstream_sync_repo: ${{ inputs.base-repo }}
+        upstream_sync_branch: ${{ inputs.branch }}
+        target_sync_branch: ${{ inputs.branch }}
+        target_repo_token: ${{ secrets.FORK_SYNC_TOKEN }}
+
+    - name: New commits found
+      if: steps.sync.outputs.has_new_commits == 'true'
+      run: echo "New commits were found to sync."
+
+    - name: No new commits
+      if: steps.sync.outputs.has_new_commits == 'false'
+      run: echo "There were no new commits."
+
+    - name: Show value of 'has_new_commits'
+      run: echo ${{ steps.sync.outputs.has_new_commits }}
