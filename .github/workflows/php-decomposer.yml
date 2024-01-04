@@ -74,7 +74,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Decomposer checkout
+      - name: Cache decomposer dependencies
+        id: cache-decomposer
+        uses: actions/cache@v4
+        with:
+          path: | 
+            ${{ github.workspace }}/vendor
+            ${{ github.workspace }}/decomposer.autoload.inc.php
+          key: ${{ runner.os }}-${{ hashFiles('decomposer.json') }}
+          restore-keys: 
+            ${{ runner.os }}-
+
+      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
+        name: Decomposer checkout
         uses: actions/checkout@v4
         with:
             repository: 'move-backend/decomposer'
@@ -82,7 +94,8 @@ jobs:
             # Relative path under $GITHUB_WORKSPACE to place the repository
             path: 'decomposer'
 
-      - name: Prepare decomposer target directory
+      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
+        name: Prepare decomposer target directory
         run: mkdir -p "$GITHUB_WORKSPACE/vendor"
 
       - name: Setup PHP
@@ -102,7 +115,8 @@ jobs:
           ssh-private-key: |
             ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
 
-      - name: Install dependencies
+      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
+        name: Install dependencies
         run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
 
       - name: Run PHPunit
@@ -147,7 +161,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Decomposer checkout
+      - name: Cache decomposer dependencies
+        id: cache-decomposer
+        uses: actions/cache@v4
+        with:
+          path: | 
+            ${{ github.workspace }}/vendor
+            ${{ github.workspace }}/decomposer.autoload.inc.php
+          key: ${{ runner.os }}-${{ hashFiles('decomposer.json') }}
+          restore-keys: 
+            ${{ runner.os }}-
+
+      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
+        name: Decomposer checkout
         uses: actions/checkout@v4
         with:
             repository: 'move-backend/decomposer'
@@ -155,7 +181,8 @@ jobs:
             # Relative path under $GITHUB_WORKSPACE to place the repository
             path: 'decomposer'
 
-      - name: Prepare decomposer target directory
+      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
+        name: Prepare decomposer target directory
         run: mkdir -p "$GITHUB_WORKSPACE/vendor"
 
       - name: Setup PHPStan
@@ -172,7 +199,8 @@ jobs:
           ssh-private-key: |
             ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
 
-      - name: Install dependencies
+      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
+        name: Install dependencies
         run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
 
       - name: Run PHPStan
