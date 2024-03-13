@@ -72,10 +72,10 @@ jobs:
       matrix: ${{ fromJson(fromJson(needs.generate-matrix.outputs.matrix)) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Decomposer checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
             repository: 'move-backend/decomposer'
 
@@ -114,10 +114,10 @@ jobs:
     name: "PHPCS"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Codestyle checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
             repository: 'lunr-php/lunr-coding-standard'
             ref: ${{ inputs.codestyle-branch }}
@@ -145,10 +145,10 @@ jobs:
     name: "PHPStan"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Decomposer checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
             repository: 'move-backend/decomposer'
 
