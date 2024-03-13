@@ -1,0 +1,20 @@
+name: actionlint
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - '.github/workflows/*.ya?ml'
+  pull_request:
+    paths:
+      - '.github/workflows/*.ya?ml'
+
+concurrency:
+  group: "actionlint-${{ github.ref }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  workflow_syntax:
+    uses: move-agency/actions-templates/.github/workflows/actionlint.yml@master
