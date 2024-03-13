@@ -17,4 +17,4 @@ concurrency:
 
 jobs:
   workflow_syntax:
-    uses: move-agency/actions-templates/.github/workflows/actionlint.yml@master
+    uses: move-agency/actions-templates/.github/workflows/actionlint.yml@main
