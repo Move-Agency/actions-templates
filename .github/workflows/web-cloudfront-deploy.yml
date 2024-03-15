@@ -16,6 +16,10 @@ on:
         description: 'The ID of the cloudfront distribution'
         required: true
         type: string
+      bucket-prefix:
+        description: 'The prefix for upload buckets'
+        required: true
+        type: string
     secrets:
       amazon_role:
         description: The AWS role to assume
@@ -31,9 +35,6 @@ jobs:
     name: "Deploy to ${{ inputs.environment }} CloudFront"
     env:
         ENVIRONMENT: ${{ inputs.environment }}
-        DEPLOY_DISTRIBUTION_ID: "${{ inputs.cloudfront-distribution-id }}"
-        DEPLOY_BUCKET_PREFIX: "${{ github.repository_owner }}-website-${{ inputs.environment }}-"
-        SITE_ROOT: "https://${{ inputs.domain }}"
     strategy:
       matrix:
         node-version: ['18.x']
@@ -67,5 +68,9 @@ jobs:
           role-to-assume: ${{ secrets.amazon_role }}
 
       - name: Deploy website
+        env:
+          DEPLOY_DISTRIBUTION_ID: "${{ inputs.cloudfront-distribution-id }}"
+          DEPLOY_BUCKET_PREFIX: "${{ inputs.bucket-prefix }}"
+          SITE_ROOT: "https://${{ inputs.domain }}"
         working-directory: 'website'
         run: yarn deploy
