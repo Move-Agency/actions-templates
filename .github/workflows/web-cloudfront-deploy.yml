@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     name: "Deploy to ${{ inputs.environment }} CloudFront"
     env:
-        ENVIRONMENT: ${{ inputs.environment }}
+      ENVIRONMENT: ${{ inputs.environment }}
     strategy:
       matrix:
         node-version: ['18.x']
@@ -49,17 +49,14 @@ jobs:
           cache: yarn
       - name: Install dependencies
         run: |
-            yarn install --production=false --frozen-lockfile
-            yarn build:packages
-            yarn lerna link
-            rm -rfv ./*/*/node_modules/@move/blueprint-*
+          yarn install --production=false --frozen-lockfile
         env:
-            NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
           name: build-${{ matrix.node-version }}
-          path: website/out
+          path: out
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -72,5 +69,4 @@ jobs:
           DEPLOY_DISTRIBUTION_ID: "${{ inputs.cloudfront-distribution-id }}"
           DEPLOY_BUCKET_PREFIX: "${{ inputs.bucket-prefix }}"
           SITE_ROOT: "https://${{ inputs.domain }}"
-        working-directory: 'website'
         run: yarn deploy
