@@ -3,15 +3,15 @@ on:
   workflow_call:
     inputs:
       phpstan-level:
-        required: true
+        required: false
         type: string
         default: 4
       codestyle:
-        required: true
+        required: false
         type: string
         default: Stellr
       codestyle-branch:
-        required: true
+        required: false
         type: string
         default: stellr
       minimum-php-version:
@@ -19,7 +19,7 @@ on:
         type: string
         default: '8.1'
       stable-php-versions:
-        required: true
+        required: false
         type: string
         default: '["8.1"]'
       experimental-php-versions:
@@ -61,7 +61,7 @@ jobs:
         id: set-matrix
         run: |
           JSON=$(jq --null-input --arg stable '${{ inputs.stable-php-versions }}' --arg experimental '${{ inputs.experimental-php-versions }}' '{"php-versions": $stable | fromjson, "experimental": [ false ], "include":[ $experimental | fromjson | .[] as $version | {"php-versions": $version, "experimental": true} ]} | tostring')
-          echo "matrix=$JSON" >> $GITHUB_OUTPUT
+          echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
 
   phpunit:
     runs-on: ubuntu-latest
@@ -83,7 +83,7 @@ jobs:
             path: 'decomposer'
 
       - name: Prepare decomposer target directory
-        run: mkdir -p $GITHUB_WORKSPACE/vendor
+        run: mkdir -p "$GITHUB_WORKSPACE/vendor"
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -134,7 +134,7 @@ jobs:
       - name: Run PHPCS
         run: |
           phpcs -q --report=checkstyle \
-                   --standard=$GITHUB_WORKSPACE/codestyle/${{ inputs.codestyle }} \
+                   --standard="$GITHUB_WORKSPACE/codestyle/${{ inputs.codestyle }}" \
                    --ignore=locate\.* \
                    ${{ inputs.phpcs-whitelist }} \
                    src/ | cs2pr
@@ -156,7 +156,7 @@ jobs:
             path: 'decomposer'
 
       - name: Prepare decomposer target directory
-        run: mkdir -p $GITHUB_WORKSPACE/vendor
+        run: mkdir -p "$GITHUB_WORKSPACE/vendor"
 
       - name: Setup PHPStan
         uses: shivammathur/setup-php@v2

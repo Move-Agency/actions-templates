@@ -2,14 +2,13 @@ name: SQLFluff
 on:
   workflow_call:
     inputs:
+      path:
+        required: true
+        type: string
       identifier:
         required: false
         type: string
         default: 'SQL Files'
-      path:
-        required: true
-        type: string
-        default: ''
       dialect:
         required: false
         type: string
