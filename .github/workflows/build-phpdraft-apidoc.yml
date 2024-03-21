@@ -1,0 +1,33 @@
+name: Apidoc
+on:
+  workflow_call:
+
+jobs:
+  build_apidoc:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/smillerdev/phpdraft:main
+    permissions:
+      packages: read
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create apidoc directories
+        run: |
+          install -d build/apidoc/frontend
+          install -d build/apidoc/backend
+
+      - name: Build Frontend API documentation
+        run: phpdraft -f docs/apidoc/frontend/index.apib -s Structures > build/apidoc/frontend/index.html
+
+      - name: Build Backend API documentation
+        run: phpdraft -f docs/apidoc/backend/index.apib -s Structures > build/apidoc/backend/index.html
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: API-documentation
+          path: build/apidoc
+          if-no-files-found: error
+          retention-days: 15

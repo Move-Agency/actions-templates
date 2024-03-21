@@ -1,0 +1,40 @@
+name: Apidoc
+on:
+  workflow_call:
+    secrets:
+      amazon_role:
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy_s3:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Download API doc
+        uses: actions/download-artifact@v4
+        with:
+          name: API-documentation
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.amazon_role }}
+
+      - name: Generate project name
+        shell: bash
+        id: generate-project
+        run: |
+          PROJECT=$(echo '${{ github.repository	}}' | sed 's|${{ github.repository_owner }}/||')
+          echo "project=${PROJECT,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy Backend API doc to S3
+        run: aws s3 cp --recursive --force --acl public-read backend/ s3://move-${{ steps.generate-project.outputs.project }}-apidoc/backend
+
+      - name: Deploy Frontend API doc to S3
+        run: aws s3 cp --recursive --force --acl public-read frontend/ s3://move-${{ steps.generate-project.outputs.project }}-apidoc/frontend
