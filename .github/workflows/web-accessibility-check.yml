@@ -1,0 +1,54 @@
+name: Axe accessibility check
+on:
+  workflow_call:
+    secrets:
+      npm_pat:
+        description: The PAT for NPM registry access
+        required: true
+
+jobs:
+  axe:
+    runs-on: ubuntu-latest
+    name: 'Axe accessibility check'
+    strategy:
+      matrix:
+        node-version: ['18.x']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: https://npm.pkg.github.com
+          cache: yarn
+      - name: Install dependencies
+        run: yarn install --production=false --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_PAT}}
+
+      - name: Get Chromium version
+        run: |
+          CHROMIUM_VERSION=$(wget -qO- https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE | cut -d. -f1)
+          echo "Chromium version: $CHROMIUM_VERSION"
+          echo "CHROMIUM_VERSION=$CHROMIUM_VERSION" >> "$GITHUB_ENV"
+
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: ${{ env.CHROMIUM_VERSION }}
+
+      - name: Install chromedriver
+        run: yarn add chromedriver@"$CHROMIUM_VERSION"
+
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          name: build-${{ matrix.node-version }}
+          path: out
+
+      - name: Install axe
+        run: yarn global add @axe-core/cli
+
+      - name: Run axe accessibility test
+        run: axe --chromedriver-path "$(yarn bin)/chromedriver/bin/chromedriver file://$(pwd)/out/index.html" --exit
