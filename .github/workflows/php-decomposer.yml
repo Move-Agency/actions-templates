@@ -85,8 +85,7 @@ jobs:
           restore-keys: 
             ${{ runner.os }}-
 
-      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
-        name: Decomposer checkout
+      - name: Decomposer checkout
         uses: actions/checkout@v4
         with:
             repository: 'move-backend/decomposer'
@@ -115,8 +114,7 @@ jobs:
           ssh-private-key: |
             ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
 
-      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
-        name: Install dependencies
+      - name: Install dependencies
         run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
 
       - name: Run PHPunit
@@ -172,8 +170,7 @@ jobs:
           restore-keys: 
             ${{ runner.os }}-
 
-      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
-        name: Decomposer checkout
+      - name: Decomposer checkout
         uses: actions/checkout@v4
         with:
             repository: 'move-backend/decomposer'
@@ -199,8 +196,7 @@ jobs:
           ssh-private-key: |
             ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
 
-      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
-        name: Install dependencies
+      - name: Install dependencies
         run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
 
       - name: Run PHPStan
