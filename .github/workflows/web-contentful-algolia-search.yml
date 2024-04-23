@@ -1,4 +1,4 @@
-name: Content change - Trigger search index
+name: Content change - Update search index
 on:
   workflow_call:
     inputs:
@@ -50,11 +50,11 @@ jobs:
       - name: Install dependencies
         run: yarn install --production=false --frozen-lockfile
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_PAT}}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
       - name: Get correct Algolia index
         id: get_algolia_index
         run: echo "algolia_index=contentful_${{ inputs.environment == 'production' && 'master' || inputs.environment }}" >> "$GITHUB_OUTPUT"
-      - name: Index Search
+      - name: Feed into search index
         run: yarn index-search '${{ toJSON(inputs.contentful_payload) }}'
         env:
           CONTENTFUL_SPACE: ${{ inputs.contentful_space_id }}
