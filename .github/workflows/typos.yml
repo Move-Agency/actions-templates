@@ -6,11 +6,14 @@ on:
         required: false
         type: string
         default: 'typos.toml'
+      required:
+        type: boolean
+        default: false
 
 jobs:
   typos:
     runs-on: ubuntu-latest
-    continue-on-error: false
+    continue-on-error: ${{ !inputs.required }}
     name: "Spellcheck (typos)"
     steps:
       - name: Checkout

@@ -13,11 +13,14 @@ on:
         required: false
         type: string
         default: 'mysql'
+      required:
+        type: boolean
+        default: false
 
 jobs:
   sqlfluff:
     runs-on: ubuntu-latest
-    continue-on-error: true
+    continue-on-error: ${{ !inputs.required }}
     name: "SQLFluff (${{ inputs.identifier }})"
     steps:
       - name: Checkout
