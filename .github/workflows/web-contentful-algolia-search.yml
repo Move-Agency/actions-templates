@@ -1,0 +1,65 @@
+name: Content change - Trigger search index
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'The Contentful environment'
+        required: true
+        type: string
+      contentful_space_id:
+        description: 'The Contentful space ID'
+        required: true
+        type: string
+      algolia_app_id:
+        description: 'The Algolia app ID'
+        required: true
+        type: string
+      contentful_payload:
+        description: 'The Contentful webhook payload'
+        required: true
+        type: string
+    secrets:
+      algolia_write_key:
+        description: The Algolia write key to add search indexes
+        required: true
+      npm_pat:
+        description: The PAT for NPM registry access
+        required: true
+      contentful_access_token:
+        description: The contentful API token for content access
+        required: true
+
+jobs:
+  index_search:
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    name: 'Index Search Algolia (node ${{ matrix.node-version }})'
+    strategy:
+      matrix:
+        node-version: [ '18.x' ]
+        experimental: [ false ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: https://npm.pkg.github.com
+          cache: yarn
+      - name: Install dependencies
+        run: yarn install --production=false --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_PAT}}
+      - name: Get correct Algolia index
+        id: get_algolia_index
+        run: echo "algolia_index=contentful_${{ inputs.environment == 'production' && 'master' || inputs.environment }}" >> "$GITHUB_OUTPUT"
+      - name: Index Search
+        run: yarn index-search '${{ toJSON(inputs.contentful_payload) }}'
+        env:
+          CONTENTFUL_SPACE: ${{ inputs.contentful_space_id }}
+          CONTENTFUL_ENVIRONMENT: ${{ inputs.environment }}
+          CONTENTFUL_ACCESS_TOKEN: ${{ secrets.contentful_access_token }}
+          ALGOLIA_APP_ID: ${{ inputs.algolia_app_id }}
+          ALGOLIA_WRITE_KEY: ${{ secrets.algolia_write_key }}
+          ALGOLIA_INDEX: ${{ steps.get_algolia_index.outputs.algolia_index }}
