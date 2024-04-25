@@ -29,7 +29,9 @@ jobs:
 
       - name: Get Chromium version
         run: |
-          CHROMIUM_VERSION=$(wget -qO- https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE | cut -d. -f1)
+          # Broken with 124: https://github.com/giggio/node-chromedriver/issues/467
+          # CHROMIUM_VERSION=$(wget -qO- https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE | cut -d. -f1)
+          CHROMIUM_VERSION=123
           echo "Chromium version: $CHROMIUM_VERSION"
           echo "CHROMIUM_VERSION=$CHROMIUM_VERSION" >> "$GITHUB_ENV"
 
@@ -39,9 +41,7 @@ jobs:
           chrome-version: ${{ env.CHROMIUM_VERSION }}
 
       - name: Install chromedriver
-        run: |
-          CHROMEDRIVER_VERSION=$(wget -qO- "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROMIUM_VERSION")
-          yarn add chromedriver@"$CHROMEDRIVER_VERSION"
+        run: yarn add chromedriver@"$CHROMIUM_VERSION"
 
       - uses: actions/download-artifact@v4
         with:
