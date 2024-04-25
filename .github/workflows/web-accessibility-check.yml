@@ -9,10 +9,10 @@ on:
 jobs:
   axe:
     runs-on: ubuntu-latest
-    name: 'Axe accessibility check'
+    name: "Axe accessibility check"
     strategy:
       matrix:
-        node-version: ['18.x']
+        node-version: ["18.x"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,7 +39,9 @@ jobs:
           chrome-version: ${{ env.CHROMIUM_VERSION }}
 
       - name: Install chromedriver
-        run: yarn add chromedriver@"$CHROMIUM_VERSION"
+        run: |
+          CHROMEDRIVER_VERSION=$(wget -qO- "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROMIUM_VERSION")
+          yarn add chromedriver@"$CHROMEDRIVER_VERSION"
 
       - uses: actions/download-artifact@v4
         with:
