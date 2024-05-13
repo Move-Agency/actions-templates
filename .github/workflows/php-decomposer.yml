@@ -201,3 +201,72 @@ jobs:
 
       - name: Run PHPStan
         run: phpstan analyze src --level ${{ inputs.phpstan-level }} --configuration tests/phpstan.neon.dist --autoload-file tests/phpstan.autoload.inc.php
+  cli_test:
+    runs-on: ubuntu-latest
+    name: "PHP-${{ matrix.php-versions }}: CLI Test"
+    needs: [ generate-matrix, phpunit ]
+    strategy:
+      matrix: ${{ fromJson(fromJson(needs.generate-matrix.outputs.matrix)) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache decomposer dependencies
+        id: cache-decomposer
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/vendor
+            ${{ github.workspace }}/decomposer.autoload.inc.php
+          key: ${{ runner.os }}-${{ hashFiles('decomposer.json') }}
+          restore-keys:
+            ${{ runner.os }}-
+
+      - name: Decomposer checkout
+        uses: actions/checkout@v4
+        with:
+            repository: 'move-backend/decomposer'
+
+            # Relative path under $GITHUB_WORKSPACE to place the repository
+            path: 'decomposer'
+
+      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
+        name: Prepare decomposer target directory
+        run: mkdir -p "$GITHUB_WORKSPACE/vendor"
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: 'autoload_psr-pprkut/autoload-psr@0.2.0,pecl_http,uuid'
+          ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor'
+
+      - name: Setup problem matchers for PHP
+        run: echo "::add-matcher::${{ runner.tool_cache }}/php.json"
+
+      - name: Configure ssh keys
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
+
+      - name: Install dependencies
+        run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
+
+      - name: Setup maintenance file
+        run: touch MAINTENANCE.php
+
+      - name: Run test command
+        run: |
+          if ! php ./cli.php -vvv > output.txt 2>&1 ; then
+            printf "::error file=cli.php::CLI call failed!\n\n%s" "$(cat output.txt)"
+            exit 1
+          fi
+          if [ ! -s "output.txt" ]; then
+            printf "::notice file=cli.php::No output from CLI call!"
+            exit 1
+          fi
+          if ! grep "Not implemented" output.txt; then
+            printf "::notice file=cli.php::Unexpected output from CLI call!\n\n%s" "$(cat output.txt)"
+            exit 1
+          fi
