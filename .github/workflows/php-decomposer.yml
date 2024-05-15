@@ -237,4 +237,5 @@ jobs:
             -Dsonar.projectName=${{ steps.variables.outputs.project }}
             -Dsonar.php.tests.reportPath=build/logs/junit.xml
             -Dsonar.php.coverage.reportPaths=build/logs/clover.xml
+            -Dsonar.plugins.downloadOnlyRequired=true
             -Dsonar.verbose=true
