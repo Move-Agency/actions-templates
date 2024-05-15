@@ -46,6 +46,22 @@ on:
         required: false
         type: string
         default: 'autoload_psr-pprkut/autoload-psr@0.2.0'
+      php-run-extensions:
+        required: false
+        type: string
+        default: 'autoload_psr-pprkut/autoload-psr@0.2.0,pecl_http,uuid'
+      cli-test-file:
+        required: false
+        type: string
+        default: 'cli.php'
+      cli-test-args:
+        required: false
+        type: string
+        default: '-vvv'
+      cli-test-output:
+        required: false
+        type: string
+        default: 'Not Implemented!'
     secrets:
       SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES:
         required: true
@@ -238,7 +254,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-versions }}
-          extensions: 'autoload_psr-pprkut/autoload-psr@0.2.0,pecl_http,uuid'
+          extensions: ${{ inputs.php-run-extensions }}
           ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor'
 
       - name: Setup problem matchers for PHP
@@ -256,17 +272,21 @@ jobs:
       - name: Setup maintenance file
         run: touch MAINTENANCE.php
 
+      - name: Setup configuration
+        run: |
+          echo "<?php $config['environment'] = 'CI'; ?>" > config/conf.application.local.inc.php
+
       - name: Run test command
         run: |
-          if ! php ./cli.php -vvv > output.txt 2>&1 ; then
-            printf "::error file=cli.php::CLI call failed!\n\n%s" "$(cat output.txt)"
+          if ! php ${{ inputs.cli-test-file }} ${{ inputs.cli-test-args }} > output.txt 2>&1 ; then
+            printf "::error file=${{ inputs.cli-test-file }}::CLI call failed!\n\n%s" "$(cat output.txt)"
             exit 1
           fi
           if [ ! -s "output.txt" ]; then
-            printf "::notice file=cli.php::No output from CLI call!"
+            printf "::notice file=${{ inputs.cli-test-file }}::No output from CLI call!"
             exit 1
           fi
-          if ! grep "Not implemented" output.txt; then
-            printf "::notice file=cli.php::Unexpected output from CLI call!\n\n%s" "$(cat output.txt)"
+          if ! grep "${{ inputs.cli-test-output }}" output.txt; then
+            printf "::notice file=${{ inputs.cli-test-file }}::Unexpected output from CLI call!\n\n%s" "$(cat output.txt)"
             exit 1
           fi
