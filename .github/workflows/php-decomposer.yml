@@ -127,7 +127,7 @@ jobs:
         run: phpunit --configuration tests/phpunit.xml --coverage-clover=coverage.xml
 
       - name: Upload results
-      - uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: phpunit-logs-${{ matrix.php-versions }}
           path: build/logs/
