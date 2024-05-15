@@ -278,6 +278,7 @@ jobs:
 
       - name: Run test command
         run: |
+          # shellcheck disable=SC1087
           if ! php ${{ inputs.cli-test-file }} ${{ inputs.cli-test-args }} > output.txt 2>&1 ; then
             printf "::error file=${{ inputs.cli-test-file }}::CLI call failed!\n\n%s" "$(cat output.txt)"
             exit 1
