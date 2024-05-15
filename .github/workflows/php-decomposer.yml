@@ -42,6 +42,10 @@ on:
         required: false
         type: string
         default: ''
+      sonar-host-url:
+        required: false
+        type: string
+        default: 'https://whale.moveagency.com'
       php-extensions:
         required: false
         type: string
@@ -49,6 +53,8 @@ on:
     secrets:
       SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES:
         required: true
+      SONAR_TOKEN:
+        required: false
 
 jobs:
   generate-matrix:
@@ -201,3 +207,29 @@ jobs:
 
       - name: Run PHPStan
         run: phpstan analyze src --level ${{ inputs.phpstan-level }} --configuration tests/phpstan.neon.dist --autoload-file tests/phpstan.autoload.inc.php
+  sonarqube:
+    runs-on: ubuntu-latest
+    name: SonarQube
+    if: secrets.SONAR_TOKEN
+    needs: [phpunit]
+    steps:
+      - name: Determine variables
+        id: variables
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.repository	}}"
+          echo "account=${$OWNER,move-,}" > "$GITHUB_OUTPUT"
+          echo "project=${$REPO,$OWNER/,}" > "$GITHUB_OUTPUT"
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_HOST_URL: ${{ inputs.sonar-host-url }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: ./src/
+          args: >
+            -Dsonar.projectKey=${{ steps.variables.outputs.account }}:backend:${{ steps.variables.outputs.project }}
+            -Dsonar.projectName=${{ steps.variables.outputs.project }}
+            -Dsonar.php.tests.reportPath=build/logs/junit.xml
+            -Dsonar.php.coverage.reportPaths=build/logs/clover.xml
+            -Dsonar.verbose=true
