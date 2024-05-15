@@ -274,7 +274,7 @@ jobs:
 
       - name: Setup configuration
         run: |
-          echo "<?php $config['environment'] = 'CI'; ?>" > config/conf.application.local.inc.php
+          echo "<?php \$config['environment'] = 'CI'; ?>" > config/conf.application.local.inc.php
 
       - name: Run test command
         run: |
