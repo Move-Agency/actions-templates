@@ -210,7 +210,6 @@ jobs:
   sonarqube:
     runs-on: ubuntu-latest
     name: SonarQube
-    if: secrets.SONAR_TOKEN
     needs: [phpunit]
     steps:
       - name: Determine variables
@@ -225,6 +224,7 @@ jobs:
         env:
           SONAR_HOST_URL: ${{ inputs.sonar-host-url }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        if: ${{ env.SONAR_TOKEN != '' }}
         with:
           projectBaseDir: ./src/
           args: >
