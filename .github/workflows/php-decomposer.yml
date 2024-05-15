@@ -217,8 +217,13 @@ jobs:
         run: |
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.repository	}}"
-          echo "account=${OWNER/move-/}" > "$GITHUB_OUTPUT"
-          echo "project=${REPO/$OWNER\//}" > "$GITHUB_OUTPUT"
+          ACCOUNT_SLUG=${OWNER/move-/}
+          echo "account=${ACCOUNT_SLUG^^}" >> "$GITHUB_OUTPUT"
+          echo "project=${REPO/$OWNER\//}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@master
         env:
