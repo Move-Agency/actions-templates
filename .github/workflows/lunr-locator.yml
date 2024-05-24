@@ -1,0 +1,110 @@
+name: Lunr.Locator recipe integrity check
+on:
+  workflow_call:
+    inputs:
+      recipe-directory:
+        required: false
+        type: string
+        default: 'config/locator'
+      stable-php-versions:
+        required: false
+        type: string
+        default: '["8.1"]'
+      experimental-php-versions:
+        required: false
+        type: string
+        default: '["8.2", "8.3"]'
+      php-extensions:
+        required: false
+        type: string
+        default: 'autoload_psr-pprkut/autoload-psr@0.2.0'
+      php-ini-settings:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES:
+        required: true
+
+jobs:
+  generate-matrix:
+    name: Generate matrix for tests
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix for build
+        id: set-matrix
+        run: |
+          JSON=$(jq --null-input --arg stable '${{ inputs.stable-php-versions }}' --arg experimental '${{ inputs.experimental-php-versions }}' '{"php-versions": $stable | fromjson, "experimental": [ false ], "include":[ $experimental | fromjson | .[] as $version | {"php-versions": $version, "experimental": true} ]} | tostring')
+          echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
+
+  locator-recipe-integrity-check:
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    name: "PHP-${{ matrix.php-versions }}: Lunr.Locator recipe integrity check"
+    needs: generate-matrix
+    strategy:
+      matrix: ${{ fromJson(fromJson(needs.generate-matrix.outputs.matrix)) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache decomposer dependencies
+        id: cache-decomposer
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/vendor
+            ${{ github.workspace }}/decomposer.autoload.inc.php
+          key: ${{ runner.os }}-${{ hashFiles('decomposer.json') }}
+          restore-keys:
+            ${{ runner.os }}-
+
+      - name: Decomposer checkout
+        uses: actions/checkout@v4
+        with:
+            repository: 'move-backend/decomposer'
+
+            # Relative path under $GITHUB_WORKSPACE to place the repository
+            path: 'decomposer'
+
+      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
+        name: Prepare decomposer target directory
+        run: mkdir -p "$GITHUB_WORKSPACE/vendor"
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: ${{ inputs.php-extensions }}
+          ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor', ${{ inputs.php-ini-settings }}
+
+      - name: Setup problem matchers for PHP
+        run: echo "::add-matcher::${{ runner.tool_cache }}/php.json"
+
+      - name: Configure ssh keys
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
+
+      - name: Install dependencies
+        run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
+
+      - name: Run integrity check
+        run: |
+            set +e
+            EXIT_CODE=0
+            for i in ${{ inputs.recipe-directory }}/*; do
+                RECIPE="$(basename "$i" | cut -d "." -f 2)"
+
+                php tests/check-locator-recipe.php "$RECIPE"
+
+                RESULT="$?"
+
+                if ! [ "$RESULT" = 0 ]; then
+                    EXIT_CODE="$RESULT"
+                fi
+            done
+            exit $EXIT_CODE
