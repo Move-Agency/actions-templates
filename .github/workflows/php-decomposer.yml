@@ -46,6 +46,22 @@ on:
         required: false
         type: string
         default: 'autoload_psr-pprkut/autoload-psr@0.2.0'
+      php-run-extensions:
+        required: false
+        type: string
+        default: 'autoload_psr-pprkut/autoload-psr@0.2.0,pecl_http,uuid'
+      cli-test-file:
+        required: false
+        type: string
+        default: 'cli.php'
+      cli-test-args:
+        required: false
+        type: string
+        default: '-vvv'
+      cli-test-output:
+        required: false
+        type: string
+        default: 'Not Implemented!'
     secrets:
       SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES:
         required: true
@@ -201,3 +217,77 @@ jobs:
 
       - name: Run PHPStan
         run: phpstan analyze src --level ${{ inputs.phpstan-level }} --configuration tests/phpstan.neon.dist --autoload-file tests/phpstan.autoload.inc.php
+  cli_test:
+    runs-on: ubuntu-latest
+    name: "PHP-${{ matrix.php-versions }}: CLI Test"
+    needs: [ generate-matrix, phpunit ]
+    strategy:
+      matrix: ${{ fromJson(fromJson(needs.generate-matrix.outputs.matrix)) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache decomposer dependencies
+        id: cache-decomposer
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/vendor
+            ${{ github.workspace }}/decomposer.autoload.inc.php
+          key: ${{ runner.os }}-${{ hashFiles('decomposer.json') }}
+          restore-keys:
+            ${{ runner.os }}-
+
+      - name: Decomposer checkout
+        uses: actions/checkout@v4
+        with:
+            repository: 'move-backend/decomposer'
+
+            # Relative path under $GITHUB_WORKSPACE to place the repository
+            path: 'decomposer'
+
+      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
+        name: Prepare decomposer target directory
+        run: mkdir -p "$GITHUB_WORKSPACE/vendor"
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: ${{ inputs.php-run-extensions }}
+          ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor'
+
+      - name: Setup problem matchers for PHP
+        run: echo "::add-matcher::${{ runner.tool_cache }}/php.json"
+
+      - name: Configure ssh keys
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
+
+      - name: Install dependencies
+        run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
+
+      - name: Setup maintenance file
+        run: support/setup.sh
+
+      - name: Setup configuration
+        run: |
+          echo "<?php \$config['environment'] = 'CI'; ?>" > config/conf.application.local.inc.php
+
+      - name: Run test command
+        run: |
+          # shellcheck disable=SC1087
+          if ! php ${{ inputs.cli-test-file }} ${{ inputs.cli-test-args }} > output.txt 2>&1 ; then
+            printf "::error file=${{ inputs.cli-test-file }}::CLI call failed!\n\n%s" "$(cat output.txt)"
+            exit 1
+          fi
+          if [ ! -s "output.txt" ]; then
+            printf "::notice file=${{ inputs.cli-test-file }}::No output from CLI call!"
+            exit 1
+          fi
+          if ! grep "${{ inputs.cli-test-output }}" output.txt; then
+            printf "::notice file=${{ inputs.cli-test-file }}::Unexpected output from CLI call!\n\n%s" "$(cat output.txt)"
+            exit 1
+          fi
