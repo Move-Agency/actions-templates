@@ -38,6 +38,10 @@ on:
         required: false
         type: boolean
         default: false
+      allow-sonarqube-failures:
+        required: false
+        type: boolean
+        default: false
       phpcs-whitelist:
         required: false
         type: string
@@ -215,6 +219,7 @@ jobs:
         run: phpstan analyze src --level ${{ inputs.phpstan-level }} --configuration tests/phpstan.neon.dist --autoload-file tests/phpstan.autoload.inc.php
   sonarqube:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ inputs.allow-sonarqube-failures }}
     name: SonarQube
     needs: [phpunit]
     steps:
