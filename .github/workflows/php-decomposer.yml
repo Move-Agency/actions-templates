@@ -270,7 +270,7 @@ jobs:
         run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
 
       - name: Setup maintenance file
-        run: touch MAINTENANCE.php
+        run: support/setup.sh
 
       - name: Setup configuration
         run: |
