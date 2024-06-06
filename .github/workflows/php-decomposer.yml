@@ -147,8 +147,8 @@ jobs:
         run: |
           phpcs -q --report=checkstyle \
                    --standard="$GITHUB_WORKSPACE/codestyle/${{ inputs.codestyle }}" \
-                   --ignore=locate\.* \
-                   ${{ inputs.phpcs-whitelist }} \
+                   --ignore="locate\.* \
+                   ${{ inputs.phpcs-whitelist }}" \
                    src/ | cs2pr
 
   phpstan:
