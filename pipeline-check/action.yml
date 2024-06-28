@@ -13,4 +13,4 @@ runs:
       run: pipx install check-jsonschema
 
     - shell: bash
-      run: check-jsonschema --schemafile $GITHUB_ACTION_PATH/pipeline.schema.json ${{ input.file }}
+      run: check-jsonschema --schemafile $GITHUB_ACTION_PATH/pipeline.schema.json ${{ inputs.file }}
