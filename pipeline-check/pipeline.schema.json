@@ -1,0 +1,67 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://moveagency.com/pipeline.schema.json",
+    "title": "Pipeline",
+    "description": "A pipeline for data import",
+    "type": "object",
+    "required": [
+        "info",
+        "sources",
+        "flattener"
+    ],
+    "additionalProperties": false,
+    "properties": {
+        "info": {
+            "description": "Information about the pipeline itself",
+            "type": "object",
+            "properties": {
+                "table": {
+                    "type": "string",
+                    "description": "The target table for the data"
+                },
+                "content-range": {
+                    "type": "array",
+                    "description": "The content range that should be evaluated",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            }
+        },
+        "sources": {
+            "description": "Sources to process in the pipeline",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "minProperties": 1,
+                "maxProperties": 1
+            }
+        },
+        "flattener": {
+            "description": "Component to flatten source data into the desired structure",
+            "type": "object"
+        },
+        "parser": {
+            "description": "Parse flattened data before storing it",
+            "type": "object"
+        },
+        "preprocessors": {
+            "description": "Iterate on the dataset before storing it in the database",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "minProperties": 1,
+                "maxProperties": 1
+            }
+        },
+        "processors": {
+            "description": "Iterate on an item before storing the collection in the database",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "minProperties": 1,
+                "maxProperties": 1
+            }
+        }
+    }
+}
