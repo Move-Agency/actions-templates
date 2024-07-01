@@ -36,7 +36,7 @@ jobs:
       - name: Detect API docs
         id: detect
         run: |
-          echo "docs=$(ls ./ | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+          echo "docs=$(find docs/apidoc/ -type d -maxdepth 1 -exec basename {} \; | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
       - name: Deploy Backend API doc to S3
