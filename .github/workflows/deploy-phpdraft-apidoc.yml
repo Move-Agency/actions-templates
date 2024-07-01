@@ -35,7 +35,9 @@ jobs:
 
       - name: Detect API docs
         id: detect
-        run: echo "docs=$(ls ./ | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "docs=$(ls ./ | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
 
       - name: Deploy Backend API doc to S3
         if: ${{ contains(steps.detect.outputs.docs, 'backend/') }}
