@@ -40,9 +40,9 @@ jobs:
           cat "$GITHUB_OUTPUT"
 
       - name: Deploy Backend API doc to S3
-        if: ${{ contains(steps.detect.outputs.docs, 'backend/') }}
+        if: ${{ contains(steps.detect.outputs.docs, 'backend') }}
         run: aws s3 cp --recursive --force --acl public-read backend/ s3://move-${{ steps.generate-project.outputs.project }}-apidoc/backend
 
       - name: Deploy Frontend API doc to S3
-        if: ${{ contains(steps.detect.outputs.docs, 'frontend/') }}
+        if: ${{ contains(steps.detect.outputs.docs, 'frontend') }}
         run: aws s3 cp --recursive --force --acl public-read frontend/ s3://move-${{ steps.generate-project.outputs.project }}-apidoc/frontend
