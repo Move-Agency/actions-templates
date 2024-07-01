@@ -17,7 +17,7 @@ jobs:
       - name: Detect API docs
         id: detect
         run: |
-          echo "docs=$(ls docs/apidoc/ | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+          echo "docs=$(find docs/apidoc/ -type d -maxdepth 1 -exec basename {} \; | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
       - name: Build Frontend API documentation
