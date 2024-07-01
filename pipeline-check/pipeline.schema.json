@@ -5,13 +5,29 @@
     "description": "A pipeline for data import",
     "type": "object",
     "required": [
-        "info",
         "sources",
         "flattener"
     ],
     "additionalProperties": false,
     "properties": {
         "info": {
+            "description": "Information about the pipeline itself",
+            "type": "object",
+            "properties": {
+                "table": {
+                    "type": "string",
+                    "description": "The target table for the data"
+                },
+                "content-range": {
+                    "type": "array",
+                    "description": "The content range that should be evaluated",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            }
+        },
+        "import_info": {
             "description": "Information about the pipeline itself",
             "type": "object",
             "properties": {
