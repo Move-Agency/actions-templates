@@ -19,13 +19,13 @@ jobs:
         run: echo "docs=$(ls docs/apidoc/)" >> "$GITHUB_OUTPUT"
 
       - name: Build Frontend API documentation
-        if: ${{ contains(steps.detect.outputs.docs, "frontend/") }}
+        if: ${{ contains(steps.detect.outputs.docs, 'frontend/') }}
         run: |
           install -d build/apidoc/frontend
           phpdraft -f docs/apidoc/frontend/index.apib -s Structures > build/apidoc/frontend/index.html
 
       - name: Build Backend API documentation
-        if: ${{ contains(steps.detect.outputs.docs, "backend/") }}
+        if: ${{ contains(steps.detect.outputs.docs, 'backend/') }}
         run: |
           install -d build/apidoc/backend
           phpdraft -f docs/apidoc/backend/index.apib -s Structures > build/apidoc/backend/index.html
