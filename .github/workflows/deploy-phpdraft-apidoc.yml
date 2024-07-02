@@ -1,6 +1,11 @@
 name: Apidoc
 on:
   workflow_call:
+    inputs:
+      amazon_region:
+        required: false
+        default: us-east-1
+        type: string
     secrets:
       amazon_role:
         required: true
@@ -23,7 +28,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: us-east-1
+          aws-region: ${{ inputs.amazon_region }}
           role-to-assume: ${{ secrets.amazon_role }}
 
       - name: Generate project name
