@@ -12,7 +12,7 @@ on:
       dialect:
         required: false
         type: string
-        default: 'mysql'
+        default: 'mariadb'
       required:
         type: boolean
         default: false
