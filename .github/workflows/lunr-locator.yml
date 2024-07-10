@@ -99,7 +99,7 @@ jobs:
             for i in ${{ inputs.recipe-directory }}/*; do
                 RECIPE="$(basename "$i" | cut -d "." -f 2)"
 
-                php tests/check-locator-recipe.php "$RECIPE"
+                php -d disable_functions=curl_exec tests/check-locator-recipe.php "$RECIPE"
 
                 RESULT="$?"
 
