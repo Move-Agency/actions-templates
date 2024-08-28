@@ -7,6 +7,11 @@ on:
         default: 'Test'
         required: false
         type: string
+      ref:
+        description: 'The ref to checkout'
+        default: 'release/test'
+        required: false
+        type: string
     secrets:
       npm_pat:
         description: The PAT for NPM registry access
@@ -24,6 +29,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
       - name: Setup node
         uses: actions/setup-node@v4
         with:
