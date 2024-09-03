@@ -7,6 +7,11 @@ on:
         default: 'Test'
         required: false
         type: string
+      contentful_environment:
+        description: 'The contentful environment to migrate to'
+        default: 'test'
+        required: false
+        type: string
       contentful_space_id:
         description: 'The contentful space ID'
         required: true
@@ -53,7 +58,7 @@ jobs:
 
       - name: Run migration step
         env:
-          CONTENTFUL_ENVIRONMENT: ${{ inputs.environment }}
+          CONTENTFUL_ENVIRONMENT: ${{ inputs.contentful_environment }}
           CONTENTFUL_SPACE: ${{ inputs.contentful_space_id }}
           CONTENTFUL_MANAGEMENT_API_TOKEN: ${{ secrets.contentful_management_api_token }}
           MIGRATIONS_STATE_FILE_STORAGE: s3
