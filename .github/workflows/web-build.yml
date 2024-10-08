@@ -7,6 +7,11 @@ on:
         default: 'Test'
         required: false
         type: string
+      cache_build:
+        description: 'Cache the build files'
+        default: false
+        required: false
+        type: boolean
     secrets:
       npm_pat:
         description: The PAT for NPM registry access
@@ -24,21 +29,42 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://npm.pkg.github.com
           cache: yarn
+
+      - name: Restore build directory
+        if: inputs.cache_build == true
+        id: cache-build-restore
+        uses: actions/cache/restore@v4
+        with:
+          key: ${{ inputs.environment }}-${{ matrix.node-version }}-build
+          path: out/
+        
+
       - name: Install dependencies
         run: yarn install --production=false --frozen-lockfile
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_PAT}}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
+
       - name: Build website
         run: yarn build
+
       - name: Upload website
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.node-version }}
           path: out/
           retention-days: 1
+
+      - name: Save build
+        id: cache-build-save
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ inputs.environment }}-${{ matrix.node-version }}-build
+          path: out/
+            
