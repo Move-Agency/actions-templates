@@ -53,4 +53,4 @@ jobs:
         run: yarn global add @axe-core/cli
 
       - name: Run axe accessibility test
-        run: axe --chromedriver-path "$(yarn bin)/chromedriver/bin/chromedriver file://$(pwd)/out/index.html" --exit
+        run: axe --chromedriver-path "$(yarn bin)/chromedriver/bin/chromedriver" "file://$(pwd)/out/index.html" --exit
