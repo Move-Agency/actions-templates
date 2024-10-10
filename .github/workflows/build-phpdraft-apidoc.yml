@@ -24,13 +24,17 @@ jobs:
         if: ${{ contains(steps.detect.outputs.docs, 'frontend') }}
         run: |
           install -d build/apidoc/frontend
-          phpdraft -f docs/apidoc/frontend/index.apib -s Structures > build/apidoc/frontend/index.html
+          phpdraft --file docs/apidoc/frontend/index.apib \
+                   --sort Structures \
+                   --openapi build/apidoc/frontend/openapi.json > build/apidoc/frontend/index.html
 
       - name: Build Backend API documentation
         if: ${{ contains(steps.detect.outputs.docs, 'backend') }}
         run: |
           install -d build/apidoc/backend
-          phpdraft -f docs/apidoc/backend/index.apib -s Structures > build/apidoc/backend/index.html
+          phpdraft --file docs/apidoc/backend/index.apib \
+                   --sort Structures \
+                   --openapi build/apidoc/backend/openapi.json > build/apidoc/backend/index.html
 
       - uses: actions/upload-artifact@v4
         with:
