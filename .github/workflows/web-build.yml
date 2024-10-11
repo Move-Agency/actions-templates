@@ -19,7 +19,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest-8-cores
     name: 'Build (node ${{ matrix.node-version }})'
     env:
       ENVIRONMENT: ${{ inputs.environment }}
