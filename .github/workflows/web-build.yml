@@ -67,6 +67,7 @@ jobs:
           name: build-${{ matrix.node-version }}
           path: out/
           retention-days: 1
+          include-hidden-files: true
 
       - name: Save build
         id: cache-build-save
