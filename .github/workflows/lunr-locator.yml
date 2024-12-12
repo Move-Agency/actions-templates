@@ -49,6 +49,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Cache decomposer dependencies
         id: cache-decomposer
@@ -64,6 +66,7 @@ jobs:
       - name: Decomposer checkout
         uses: actions/checkout@v4
         with:
+            persist-credentials: false
             repository: 'move-backend/decomposer'
 
             # Relative path under $GITHUB_WORKSPACE to place the repository
