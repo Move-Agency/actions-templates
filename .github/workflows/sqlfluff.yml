@@ -37,4 +37,6 @@ jobs:
         run: pip install sqlfluff
 
       - name: Lint SQL
-        run: sqlfluff lint --disable-progress-bar --dialect=${{ inputs.dialect }} --format=github-annotation-native ${{ inputs.path }}
+        env:
+          DIALECT: ${{ inputs.dialect }}
+        run: sqlfluff lint --disable-progress-bar --dialect="$DIALECT" --format=github-annotation-native ${{ inputs.path }}

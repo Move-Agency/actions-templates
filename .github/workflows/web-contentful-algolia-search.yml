@@ -54,9 +54,13 @@ jobs:
         run: yarn install --production=false --frozen-lockfile
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
+
       - name: Get correct Algolia index
         id: get_algolia_index
-        run: echo "algolia_index=contentful_${{ inputs.environment == 'production' && 'master' || inputs.environment }}" >> "$GITHUB_OUTPUT"
+        env:
+          CONTENTFUL_ENVIRONMENT: ${{ inputs.environment == 'production' && 'master' || inputs.environment }}
+        run: echo "algolia_index=contentful_${{ inputs.environment == 'production' && 'master' || inputs.environment }}$" >> "$GITHUB_OUTPUT"
+
       - name: Feed into search index
         run: yarn index-search '${{ toJSON(inputs.contentful_payload) }}'
         env:
