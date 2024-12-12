@@ -59,7 +59,7 @@ jobs:
         id: get_algolia_index
         env:
           CONTENTFUL_ENVIRONMENT: ${{ inputs.environment == 'production' && 'master' || inputs.environment }}
-        run: echo "algolia_index=contentful_${{ inputs.environment == 'production' && 'master' || inputs.environment }}$" >> "$GITHUB_OUTPUT"
+        run: echo "algolia_index=contentful_$CONTENTFUL_ENVIRONMENT" >> "$GITHUB_OUTPUT"
 
       - name: Feed into search index
         run: yarn index-search '${{ toJSON(inputs.contentful_payload) }}'

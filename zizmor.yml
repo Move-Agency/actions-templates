@@ -1,0 +1,12 @@
+rules:
+  template-injection:
+    ignore:
+      - php-decomposer.yml:70
+      - php-decomposer.yml:121
+      - php-decomposer.yml:168
+      - php-decomposer.yml:227
+      - web-contentful-algolia-search.yml:64
+      - sqlfluff.yml:39
+      - lunr-locator.yml:36
+      - lunr-locator.yml:86
+      - lunr-locator.yml:98
