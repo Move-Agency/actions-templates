@@ -142,18 +142,18 @@ jobs:
       - name: Run PHPunit
         run: phpunit --configuration tests/phpunit.xml
 
-      - name: Summarize Tests
-        uses: test-summary/action@v2
-        if: failure() || success()
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          paths: build/logs/junit.xml
-          show: fail
+          files: |
+              build/logs/junit.xml
 
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
           name: phpunit-logs-${{ matrix.php-versions }}
           path: build/logs/
+
       - name: Post a message in a channel
         uses: slackapi/slack-github-action@v2.0.0
         env:
