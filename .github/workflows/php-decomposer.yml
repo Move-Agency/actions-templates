@@ -75,9 +75,10 @@ jobs:
     steps:
       - name: Set matrix for build
         id: set-matrix
+        env:
+          STABLE_VERSIONS: ${{ inputs.stable-php-versions }}
+          EXPERIMENTAL_VERSIONS: ${{ inputs.experimental-php-versions }}
         run: |
-          STABLE_VERSIONS="${{ inputs.stable-php-versions }}"
-          EXPERIMENTAL_VERSIONS="${{ inputs.experimental-php-versions }}"
           JSON=$(jq --null-input --arg stable "$STABLE_VERSIONS" --arg experimental "$EXPERIMENTAL_VERSIONS" '{"php-versions": $stable | fromjson, "experimental": [ false ], "include":[ $experimental | fromjson | .[] as $version | {"php-versions": $version, "experimental": true} ]} | tostring')
           echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
 
@@ -272,7 +273,9 @@ jobs:
         run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
 
       - name: Run PHPStan
-        run: phpstan analyze src --level ${{ inputs.phpstan-level }} --configuration tests/phpstan.neon.dist --autoload-file tests/phpstan.autoload.inc.php
+        env:
+          PHPSTAN_LEVEL: ${{ inputs.phpstan-level }}
+        run: phpstan analyze src --level "$PHPSTAN_LEVEL" --configuration tests/phpstan.neon.dist --autoload-file tests/phpstan.autoload.inc.php
   sonarqube:
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.allow-sonarqube-failures }}
