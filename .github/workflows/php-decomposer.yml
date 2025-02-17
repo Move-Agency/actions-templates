@@ -206,15 +206,15 @@ jobs:
 
       - name: Run PHPCS
         run: |
-          local BOOTSTRAP
-          export BOOTSTRAP=$([ -e $GITHUB_WORKSPACE/codestyle/bootstrap.php ] && echo "--bootstrap=$GITHUB_WORKSPACE/codestyle/bootstrap.php" || echo '')
-          local SLEVOMAT
-          export SLEVOMAT=$([ -d $GITHUB_WORKSPACE/codestyle/third-party/slevomat/ ] && echo "--runtime-set installed_paths $GITHUB_WORKSPACE/codestyle/third-party/slevomat/" || echo '')
+          BOOTSTRAP=$([ -e "$GITHUB_WORKSPACE/codestyle/bootstrap.php" ] && echo "--bootstrap=$GITHUB_WORKSPACE/codestyle/bootstrap.php" || echo '')
+          export BOOTSTRAP
+          SLEVOMAT=$([ -d "$GITHUB_WORKSPACE/codestyle/third-party/slevomat/" ] && echo "--runtime-set installed_paths $GITHUB_WORKSPACE/codestyle/third-party/slevomat/" || echo '')
+          export SLEVOMAT
           phpcs --report-full \
                 --report-checkstyle=checkstyle.xml \
                 "$SLEVOMAT" \
                 "$BOOTSTRAP" \
-                --standard=$GITHUB_WORKSPACE/codestyle/${{ inputs.codestyle }} \
+                --standard="$GITHUB_WORKSPACE/codestyle/${{ inputs.codestyle }}" \
                 --ignore=locate\.* \
                 ${{ inputs.phpcs-whitelist }} \
                 src/
