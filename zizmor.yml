@@ -4,7 +4,7 @@ rules:
       - php-decomposer.yml:70
       - php-decomposer.yml:121
       - php-decomposer.yml:168
-      - php-decomposer.yml:206
+      - php-decomposer.yml:207
       - php-decomposer.yml:227
       - web-contentful-algolia-search.yml:64
       - sqlfluff.yml:39
