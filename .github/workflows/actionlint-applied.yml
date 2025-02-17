@@ -17,4 +17,6 @@ concurrency:
 
 jobs:
   workflow_syntax:
+    permissions:
+      contents: read
     uses: move-agency/actions-templates/.github/workflows/actionlint.yml@main
