@@ -76,7 +76,9 @@ jobs:
       - name: Set matrix for build
         id: set-matrix
         run: |
-          JSON=$(jq --null-input --arg stable '${{ inputs.stable-php-versions }}' --arg experimental '${{ inputs.experimental-php-versions }}' '{"php-versions": $stable | fromjson, "experimental": [ false ], "include":[ $experimental | fromjson | .[] as $version | {"php-versions": $version, "experimental": true} ]} | tostring')
+          STABLE_VERSIONS="${{ inputs.stable-php-versions }}"
+          EXPERIMENTAL_VERSIONS="${{ inputs.experimental-php-versions }}"
+          JSON=$(jq --null-input --arg stable "$STABLE_VERSIONS" --arg experimental "$EXPERIMENTAL_VERSIONS" '{"php-versions": $stable | fromjson, "experimental": [ false ], "include":[ $experimental | fromjson | .[] as $version | {"php-versions": $version, "experimental": true} ]} | tostring')
           echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
 
   phpunit:
