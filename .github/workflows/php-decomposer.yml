@@ -206,6 +206,8 @@ jobs:
 
       - name: Run PHPCS
         run: |
+          # Disabling quote requirements because we need the code injection
+          # shellcheck disable=SC2086
           BOOTSTRAP=$([ -e "$GITHUB_WORKSPACE/codestyle/bootstrap.php" ] && echo "--bootstrap=$GITHUB_WORKSPACE/codestyle/bootstrap.php" || echo '')
           export BOOTSTRAP
           SLEVOMAT=$([ -d "$GITHUB_WORKSPACE/codestyle/third-party/slevomat/" ] && echo "--runtime-set installed_paths $GITHUB_WORKSPACE/codestyle/third-party/slevomat/" || echo '')
