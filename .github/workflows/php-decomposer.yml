@@ -72,6 +72,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+    permissions:
+      contents: none
     steps:
       - name: Set matrix for build
         id: set-matrix
@@ -87,6 +89,9 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     name: "PHP-${{ matrix.php-versions }}: PHPUnit"
     needs: generate-matrix
+    permissions:
+      contents: read
+      checks: read
     strategy:
       matrix: ${{ fromJson(fromJson(needs.generate-matrix.outputs.matrix)) }}
     steps:
@@ -174,6 +179,8 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.allow-style-failures }}
     name: "PHPCS"
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -230,6 +237,8 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.allow-phpstan-failures }}
     name: "PHPStan"
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -286,6 +295,8 @@ jobs:
     continue-on-error: ${{ inputs.allow-sonarqube-failures }}
     name: SonarQube
     needs: [phpunit]
+    permissions:
+      contents: read
     steps:
       - name: Determine variables
         id: variables
