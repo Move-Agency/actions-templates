@@ -212,8 +212,8 @@ jobs:
           export SLEVOMAT
           phpcs --report-full \
                 --report-checkstyle=checkstyle.xml \
-                "$SLEVOMAT" \
-                "$BOOTSTRAP" \
+                $SLEVOMAT \
+                $BOOTSTRAP \
                 --standard="$GITHUB_WORKSPACE/codestyle/${{ inputs.codestyle }}" \
                 --ignore=locate\.* \
                 ${{ inputs.phpcs-whitelist }} \
