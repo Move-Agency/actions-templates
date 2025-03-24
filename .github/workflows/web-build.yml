@@ -12,11 +12,11 @@ on:
         default: false
         required: false
         type: boolean
-      runner:
-        description: "Runner to use"
-        default: ubuntu-latest
+      fast-runner:
+        description: 'Use a faster runner'
+        default: false
         required: false
-        type: string
+        type: boolean
     secrets:
       npm_pat:
         description: The PAT for NPM registry access
@@ -27,7 +27,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.fast-runner && 'namespace-profile-web-16-core' ||  'ubuntu-latest' }}
     name: 'Build (node ${{ matrix.node-version }})'
     env:
       ENVIRONMENT: ${{ inputs.environment }}
