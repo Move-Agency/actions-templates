@@ -12,6 +12,11 @@ on:
         default: false
         required: false
         type: boolean
+      runner:
+        description: "Runner to use"
+        default: ubuntu-latest
+        required: false
+        type: string
     secrets:
       npm_pat:
         description: The PAT for NPM registry access
@@ -19,7 +24,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     name: 'Build (node ${{ matrix.node-version }})'
     env:
       ENVIRONMENT: ${{ inputs.environment }}
@@ -62,7 +67,8 @@ jobs:
 
       - name: Build website
         env:
-          SENTRY_RELEASE: ${{ github.sha }}
+          GIT_COMMIT: ${{ github.sha }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: yarn build
 
       - name: Upload website
