@@ -166,7 +166,7 @@ jobs:
         uses: slackapi/slack-github-action@v2.0.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: ${{ failure() && env.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ failure() && contains(fromJSON('["push", "schedule"]'), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
@@ -240,7 +240,7 @@ jobs:
         uses: slackapi/slack-github-action@v2.0.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: ${{ failure() && env.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ failure() && contains(fromJSON('["push", "schedule"]'), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
@@ -314,7 +314,7 @@ jobs:
         uses: slackapi/slack-github-action@v2.0.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: ${{ failure() && env.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ failure() && contains(fromJSON('["push", "schedule"]'), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
@@ -374,7 +374,7 @@ jobs:
         uses: slackapi/slack-github-action@v2.0.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: ${{ failure() && env.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ failure() && contains(fromJSON('["push", "schedule"]'), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
