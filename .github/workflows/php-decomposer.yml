@@ -292,7 +292,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ inputs.minimum-php-version }}
-          tools: phpstan
+          tools: phpstan:2.1.8
           extensions: autoload_psr-pprkut/autoload-psr@0.2.0
           ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor'
 
