@@ -5,6 +5,7 @@ rules:
       - php-decomposer.yml:121
       - php-decomposer.yml:168
       - php-decomposer.yml:214
+      - php-decomposer.yml:217
       - web-contentful-algolia-search.yml:64
       - sqlfluff.yml:39
       - lunr-locator.yml:36
