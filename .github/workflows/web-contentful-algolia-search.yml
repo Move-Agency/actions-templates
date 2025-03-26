@@ -36,16 +36,16 @@ jobs:
     name: 'Index Search Algolia (node ${{ matrix.node-version }})'
     strategy:
       matrix:
-        node-version: [ '18.x' ]
+        node-version: [ '20.x' ]
         experimental: [ false ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
         with:
           persist-credentials: false
 
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.3.0
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://npm.pkg.github.com
