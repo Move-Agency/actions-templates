@@ -1,0 +1,40 @@
+name: Test
+on:
+  workflow_call:
+    inputs:
+        node-version:
+          description: 'Version of node to build on'
+          default: '20.x'
+          required: false
+          type: string
+    secrets:
+      npm_pat:
+        description: The PAT for NPM registry access
+        required: true
+
+jobs:
+    linter:
+        runs-on: ubuntu-latest
+        name: 'Lint (node ${{ inputs.node-version }})'
+        permissions:
+          contents: read
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v4.2.2
+            with:
+              persist-credentials: false
+    
+          - name: Setup node
+            uses: actions/setup-node@v4.3.0
+            with:
+              node-version: ${{ inputs.node-version }}
+              registry-url: https://npm.pkg.github.com
+              cache: yarn
+    
+          - name: Install dependencies
+            env:
+              NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
+            run: yarn install --production=false --frozen-lockfile
+    
+          - name: Lint
+            run: yarn lint

@@ -1,0 +1,42 @@
+name: Test
+on:
+  workflow_call:
+    secrets:
+      npm_pat:
+        description: The PAT for NPM registry access
+        required: true
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        continue-on-error: ${{ matrix.experimental }}
+        name: 'Test (node ${{ matrix.node-version }})'
+        permissions:
+          contents: read
+        strategy:
+          matrix:
+            node-version: ['20.x']
+            experimental: [false]
+            include:
+              - node-version: '22.x'
+                experimental: true
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v4.2.2
+            with:
+              persist-credentials: false
+    
+          - name: Setup node
+            uses: actions/setup-node@v4.3.0
+            with:
+              node-version: ${{ matrix.node-version }}
+              registry-url: https://npm.pkg.github.com
+              cache: yarn
+    
+          - name: Install dependencies
+            run: yarn install --production=false --frozen-lockfile
+            env:
+              NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
+    
+          - name: Run unit tests
+            run: yarn test

@@ -1,0 +1,28 @@
+name: Check links
+on:
+  workflow_call:
+    inputs:
+        artifact-name:
+          description: 'Name of the build artifact'
+          default: 'build-20.x'
+          required: false
+          type: string
+
+jobs:
+    link-checker:
+        permissions: {}
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/download-artifact@v4.2.1
+            with:
+              merge-multiple: true
+              name: ${{ inputs.artifact-name }}
+              path: out
+    
+          - name: Link Checker
+            id: lychee
+            uses: lycheeverse/lychee-action@v2.3.0
+            with:
+              fail: true
+              failIfEmpty: true
+              args: --base out/ --verbose --no-progress --exclude 'images\.ctfassets\.net' './**/*.html' 
