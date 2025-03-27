@@ -17,6 +17,11 @@ on:
         default: false
         required: false
         type: boolean
+      node-version:
+        description: 'Version of node to build on'
+        default: '20.x'
+        required: false
+        type: string
     secrets:
       npm_pat:
         description: The PAT for NPM registry access
@@ -24,16 +29,19 @@ on:
       sentry_auth_token:
         description: The token to access Sentry
         required: true
+    outputs:
+      artifact:
+        description: "Artifact name"
+        value: ${{ jobs.build.outputs.artifact }}
 
 jobs:
   build:
     runs-on: ${{ inputs.fast-runner && 'namespace-profile-web-16-core' || 'ubuntu-latest' }}
-    name: 'Build (node ${{ matrix.node-version }})'
+    name: 'Build (node ${{ inputs.node-version }})'
     env:
       ENVIRONMENT: ${{ inputs.environment }}
-    strategy:
-      matrix:
-        node-version: ['20.x']
+    outputs:
+      artifact: build-${{ inputs.node-version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
@@ -49,7 +57,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v4.3.0
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ inputs.node-version }}
           registry-url: https://npm.pkg.github.com
           cache: yarn
 
@@ -66,7 +74,7 @@ jobs:
         id: cache-build-restore
         uses: actions/cache/restore@v4.2.3
         with:
-          key: ${{ inputs.environment }}-${{ matrix.node-version }}-build
+          key: ${{ inputs.environment }}-${{ inputs.node-version }}-build
           path: out/
 
       - name: Install dependencies
@@ -83,7 +91,7 @@ jobs:
       - name: Upload website
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: build-${{ matrix.node-version }}
+          name: build-${{ inputs.node-version }}
           path: out/
           retention-days: 1
           include-hidden-files: true
@@ -92,6 +100,6 @@ jobs:
         id: cache-build-save
         uses: actions/cache/save@v4.2.3
         with:
-          key: ${{ inputs.environment }}-${{ matrix.node-version }}-build
+          key: ${{ inputs.environment }}-${{ inputs.node-version }}-build
           path: out/
             
