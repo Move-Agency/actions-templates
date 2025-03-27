@@ -51,7 +51,9 @@ jobs:
 
       - name: Get version
         run: |
-          version=$(git describe --always --abbrev=4 | sed -E 's/\-[a-z0-9]{5}//')
+          describe=$(git describe --always --tags --abbrev=4)
+          echo "GIT_DESCRIBE=$describe" >> "$GITHUB_ENV"
+          version=$(echo "$describe" | sed -E 's/\-[a-z0-9]{5}//')
           echo "VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Setup node
