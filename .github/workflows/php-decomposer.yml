@@ -171,12 +171,12 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: |
-            text: "*${{ github.repository }} (${{ github.ref }})*: PHP-${{ matrix.php-versions }}: PHPUnit ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: PHP-${{ matrix.php-versions }}: PHPUnit ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             blocks:
               - type: "section"
                 text:
                   type: "mrkdwn"
-                  text: "*${{ github.repository }} (${{ github.ref }})*: PHP-${{ matrix.php-versions }}: PHPUnit ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: PHP-${{ matrix.php-versions }}: PHPUnit ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
   phpcs:
     runs-on: ubuntu-latest
@@ -245,12 +245,12 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: |
-            text: "*${{ github.repository }} (${{ github.ref }})*: PHPCS ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: PHPCS ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             blocks:
               - type: "section"
                 text:
                   type: "mrkdwn"
-                  text: "*${{ github.repository }} (${{ github.ref }})*: PHPCS ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: PHPCS ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
   phpstan:
     runs-on: ubuntu-latest
@@ -319,12 +319,12 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: |
-            text: "*${{ github.repository }} (${{ github.ref }})*: PHPStan ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: PHPStan ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             blocks:
               - type: "section"
                 text:
                   type: "mrkdwn"
-                  text: "*${{ github.repository }} (${{ github.ref }})*: PHPStan ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: PHPStan ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
   sonarqube:
     runs-on: ubuntu-latest
@@ -379,9 +379,9 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: |
-            text: "*${{ github.repository }} (${{ github.ref }})*: SonarQube ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: SonarQube ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             blocks:
               - type: "section"
                 text:
                   type: "mrkdwn"
-                  text: "*${{ github.repository }} (${{ github.ref }})*: SonarQube ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: SonarQube ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
