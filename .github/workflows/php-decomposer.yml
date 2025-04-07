@@ -340,6 +340,8 @@ jobs:
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.repository	}}"
           ACCOUNT_SLUG=${OWNER/move-/}
+          ACCOUNT_SLUG=${ACCOUNT_SLUG/framna-nl-/}
+          ACCOUNT_SLUG=${ACCOUNT_SLUG/framna-/}
           echo "account=${ACCOUNT_SLUG^^}" >> "$GITHUB_OUTPUT"
           echo "project=${REPO/$OWNER\//}" >> "$GITHUB_OUTPUT"
 
