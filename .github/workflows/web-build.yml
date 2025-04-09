@@ -22,6 +22,11 @@ on:
         default: '20.x'
         required: false
         type: string
+      sub-site:
+        description: 'Build a sub-website'
+        default: false
+        required: false
+        type: boolean
     secrets:
       npm_pat:
         description: The PAT for NPM registry access
@@ -33,6 +38,9 @@ on:
       artifact:
         description: "Artifact name"
         value: ${{ jobs.build.outputs.artifact }}
+      sub-artifact:
+        description: "Sub site artifact name"
+        value: ${{ jobs.build.outputs.sub-artifact }}
 
 jobs:
   build:
@@ -42,6 +50,7 @@ jobs:
       ENVIRONMENT: ${{ inputs.environment }}
     outputs:
       artifact: build-${{ inputs.node-version }}
+      sub-artifact: build-sub-${{ inputs.node-version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
@@ -94,6 +103,26 @@ jobs:
         uses: actions/upload-artifact@v4.6.2
         with:
           name: build-${{ inputs.node-version }}
+          path: out/
+          retention-days: 1
+          include-hidden-files: true
+
+      - name: Clean build
+        if: inputs.sub-site
+        run: yarn clean
+
+      - name: Build website
+        if: inputs.sub-site
+        env:
+          GIT_COMMIT: ${{ github.sha }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.sentry_auth_token }}
+        run: yarn build
+
+      - name: Upload website
+        if: inputs.sub-site
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: build-sub-${{ inputs.node-version }}
           path: out/
           retention-days: 1
           include-hidden-files: true
