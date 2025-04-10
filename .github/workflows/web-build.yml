@@ -27,11 +27,6 @@ on:
         default: false
         required: false
         type: boolean
-      sub-site-name:
-        description: 'Name of the sub-website'
-        default: ''
-        required: false
-        type: string
     secrets:
       npm_pat:
         description: The PAT for NPM registry access
@@ -121,7 +116,7 @@ jobs:
         env:
           GIT_COMMIT: ${{ github.sha }}
           SENTRY_AUTH_TOKEN: ${{ secrets.sentry_auth_token }}
-        run: yarn build:${{ inputs.sub-site-name }}
+        run: yarn build:sub-site
 
       - name: Upload website
         if: inputs.sub-site
