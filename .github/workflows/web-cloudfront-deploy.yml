@@ -27,7 +27,7 @@ on:
         type: string
       artifact-name:
         description: 'Artifact to deploy'
-        default: node-20.x
+        default: build-20.x
         required: false
         type: string
     secrets:
