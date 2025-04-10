@@ -20,6 +20,11 @@ on:
         description: 'The prefix for upload buckets'
         required: true
         type: string
+      sub-site:
+        description: 'Deploy a sub-website'
+        default: false
+        required: false
+        type: boolean
     secrets:
       amazon_role:
         description: The AWS role to assume
@@ -50,15 +55,17 @@ jobs:
           node-version: ${{ matrix.node-version }}
           registry-url: https://npm.pkg.github.com
           cache: yarn
+
       - name: Install dependencies
         run: |
           yarn install --production=false --frozen-lockfile
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
+
       - uses: actions/download-artifact@v4.2.1
         with:
           merge-multiple: true
-          name: build-${{ matrix.node-version }}
+          name: ${{ inputs.sub-site && format('build-sub-{0}', matrix.node-version) || format('build-{0}', matrix.node-version) }}
           path: out
 
       - name: Configure AWS Credentials

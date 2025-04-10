@@ -27,6 +27,11 @@ on:
         default: false
         required: false
         type: boolean
+      sub-site-build-command:
+        description: 'Build command to use for the sub-website'
+        default: yarn build
+        required: false
+        type: string
     secrets:
       npm_pat:
         description: The PAT for NPM registry access
@@ -116,7 +121,7 @@ jobs:
         env:
           GIT_COMMIT: ${{ github.sha }}
           SENTRY_AUTH_TOKEN: ${{ secrets.sentry_auth_token }}
-        run: yarn build
+        run: ${{ inputs.sub-site-build-command }}
 
       - name: Upload website
         if: inputs.sub-site
@@ -133,4 +138,4 @@ jobs:
         with:
           key: ${{ inputs.environment }}-${{ inputs.node-version }}-build
           path: out/
-            
+
