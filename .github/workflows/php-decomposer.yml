@@ -163,7 +163,7 @@ jobs:
           path: build/logs/
 
       - name: Post a message in a channel
-        uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # v2.1.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         if: ${{ failure() && contains(fromJSON('["push", "schedule"]'), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
@@ -237,7 +237,7 @@ jobs:
         run: cs2pr ./checkstyle.xml
 
       - name: Post a message in a channel
-        uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # v2.1.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         if: ${{ failure() && contains(fromJSON('["push", "schedule"]'), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
@@ -311,7 +311,7 @@ jobs:
         run: phpstan analyze src --level "$PHPSTAN_LEVEL" --configuration tests/phpstan.neon.dist --autoload-file tests/phpstan.autoload.inc.php
 
       - name: Post a message in a channel
-        uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # v2.1.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         if: ${{ failure() && contains(fromJSON('["push", "schedule"]'), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
@@ -373,7 +373,7 @@ jobs:
             -Dsonar.verbose=true
 
       - name: Post a message in a channel
-        uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # v2.1.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         if: ${{ failure() && contains(fromJSON('["push", "schedule"]'), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
