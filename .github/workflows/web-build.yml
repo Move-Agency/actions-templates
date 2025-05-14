@@ -52,6 +52,9 @@ jobs:
       artifact: build-${{ inputs.node-version }}
       sub-artifact: build-sub-${{ inputs.node-version }}
     steps:
+      - uses: namespacelabs/nscloud-setup@d1c625762f7c926a54bd39252efff0705fd11c64 # v0.0.10
+        if: inputs.fast-runner
+
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -70,6 +73,12 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           registry-url: https://npm.pkg.github.com
+          cache: yarn
+
+      - name: Set up Namespace yarn cache
+        uses: namespacelabs/nscloud-cache-action@2f50e7d0f70475e6f59a55ba0f05eec9108e77cc # v1.2.7
+        if: inputs.fast-runner
+        with:
           cache: yarn
 
       - name: Restore nextjs cache
