@@ -68,17 +68,17 @@ jobs:
           version=$(echo "$describe" | sed -E 's/\-[a-z0-9]{5}//')
           echo "VERSION=$version" >> "$GITHUB_ENV"
 
+      - name: Set up Namespace yarn cache
+        uses: namespacelabs/nscloud-cache-action@2f50e7d0f70475e6f59a55ba0f05eec9108e77cc # v1.2.7
+        if: inputs.fast-runner
+        with:
+          cache: yarn
+
       - name: Setup node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ inputs.node-version }}
           registry-url: https://npm.pkg.github.com
-          cache: yarn
-
-      - name: Set up Namespace yarn cache
-        uses: namespacelabs/nscloud-cache-action@2f50e7d0f70475e6f59a55ba0f05eec9108e77cc # v1.2.7
-        if: inputs.fast-runner
-        with:
           cache: yarn
 
       - name: Restore nextjs cache
