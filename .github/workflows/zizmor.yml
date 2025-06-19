@@ -5,10 +5,8 @@ on:
 
 jobs:
   zizmor:
-    name: zizmor latest via PyPI
     runs-on: ubuntu-latest
     permissions:
-      # required for workflows in private repositories
       contents: read
       actions: read
     steps:
@@ -17,10 +15,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@f0ec1fc3b38f5e7cd731bb6ce540c5af426746bb # v6.1.0
-
       - name: Run zizmor 🌈
-        run: uvx zizmor --format plain .
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: zizmorcore/zizmor-action@f52a838cfabf134edcbaa7c8b3677dde20045018 # v0.1.1
+        with:
+          advanced-security: false
