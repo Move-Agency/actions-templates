@@ -102,6 +102,12 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
 
+      - name: Install Phrase CLI
+        if: hashFiles('.phraseapp.yml') != ''
+        run: |
+          eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+          brew install phrase
+
       - name: Build website
         env:
           GIT_COMMIT: ${{ github.sha }}
