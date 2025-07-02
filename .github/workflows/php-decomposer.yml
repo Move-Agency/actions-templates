@@ -231,10 +231,13 @@ jobs:
                 --report-checkstyle=checkstyle.xml \
                 $SLEVOMAT \
                 $BOOTSTRAP \
-                --standard="$GITHUB_WORKSPACE/codestyle/${{ inputs.codestyle }}" \
+                --standard="$GITHUB_WORKSPACE/codestyle/${CODESTYLE}" \
                 --ignore=locate\.* \
-                ${{ inputs.phpcs-whitelist }} \
+                ${PHPCS_WHITELIST} \
                 src/
+        env:
+          CODESTYLE: ${{ inputs.codestyle }}
+          PHPCS_WHITELIST: ${{ inputs.phpcs-whitelist }}
 
       - name: Convert checkstyle output to github style
         if: always()

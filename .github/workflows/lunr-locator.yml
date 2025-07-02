@@ -36,8 +36,11 @@ jobs:
       - name: Set matrix for build
         id: set-matrix
         run: |
-          JSON=$(jq --null-input --arg stable '${{ inputs.stable-php-versions }}' --arg experimental '${{ inputs.experimental-php-versions }}' '{"php-versions": $stable | fromjson, "experimental": [ false ], "include":[ $experimental | fromjson | .[] as $version | {"php-versions": $version, "experimental": true} ]} | tostring')
+          JSON=$(jq --null-input --arg stable "${STABLE_PHP_VERSIONS}" --arg experimental "${EXPERIMENTAL_PHP_VERSIONS}" '{"php-versions": $stable | fromjson, "experimental": [ false ], "include":[ $experimental | fromjson | .[] as $version | {"php-versions": $version, "experimental": true} ]} | tostring')
           echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
+        env:
+          STABLE_PHP_VERSIONS: ${{ inputs.stable-php-versions }}
+          EXPERIMENTAL_PHP_VERSIONS: ${{ inputs.experimental-php-versions }}
 
   locator-recipe-integrity-check:
     runs-on: ubuntu-latest
@@ -101,7 +104,7 @@ jobs:
         run: |
             set +e
             EXIT_CODE=0
-            for i in ${{ inputs.recipe-directory }}/*; do
+            for i in "${RECIPE_DIRECTORY}"/*; do
                 RECIPE="$(basename "$i" | cut -d "." -f 2)"
 
                 php -d disable_functions=curl_exec tests/check-locator-recipe.php "$RECIPE"
@@ -113,3 +116,5 @@ jobs:
                 fi
             done
             exit $EXIT_CODE
+        env:
+          RECIPE_DIRECTORY: ${{ inputs.recipe-directory }}
