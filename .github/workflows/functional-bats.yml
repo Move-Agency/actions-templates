@@ -1,0 +1,104 @@
+name: Functional Tests
+on:
+  workflow_call:
+    inputs:
+      tests-path:
+        required: false
+        type: string
+        default: 'tests/functional/testsuites/'
+      php-extensions:
+        required: false
+        type: string
+        default: 'autoload_psr-pprkut/autoload-psr@0.2.0'
+      php-ini-settings:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES:
+        required: true
+
+jobs:
+  functional-tests:
+    runs-on: ubuntu-latest
+    name: Install Bats and bats libs
+    permissions:
+      contents: read
+      issues: read
+      checks: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: true
+      
+      - name: Cache decomposer dependencies
+        id: cache-decomposer
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: | 
+            ${{ github.workspace }}/vendor
+            ${{ github.workspace }}/decomposer.autoload.inc.php
+          key: ${{ runner.os }}-${{ hashFiles('decomposer.json') }}
+          restore-keys: 
+            ${{ runner.os }}-
+
+      - name: Decomposer checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+            repository: 'framna-nl-backend/decomposer'
+
+            # Relative path under $GITHUB_WORKSPACE to place the repository
+            path: 'decomposer'
+            persist-credentials: true
+
+      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
+        name: Prepare decomposer target directory
+        run: mkdir -p "$GITHUB_WORKSPACE/vendor"
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # v2.33.0
+        with:
+          php-version: 8.1
+          extensions: ${{ inputs.php-extensions }}
+          ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor', ${{ inputs.php-ini-settings }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+      - name: Configure ssh keys
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
+
+      - name: Install dependencies
+        run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
+
+      - name: Setup Bats and bats libs
+        id: setup-bats
+        uses: bats-core/bats-action@42fcc8700f773c075a16a90eb11674c0318ad507 # v3.0.1
+
+      - name: Run setup
+        run: ./support/setup.sh
+
+      - name: Set config overrides
+        run: |
+          cp -a config/conf.application.local.inc.php.sample config/conf.application.local.inc.php
+          sed -i "s|{{ environment }}|ci|" config/conf.application.local.inc.php
+
+      - name: Functional tests
+        shell: bash
+        env:
+          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
+          TERM: xterm
+          TEST_PATH: ${{ inputs.tests-path }}
+        run: bats --recursive "$TEST_PATH" --print-output-on-failure --filter-tags '!mariadb:true' --report-formatter junit --output "$PWD"
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@3a74b2957438d0b6e2e61d67b05318aa25c9e6c6 # v2.20.0
+        if: always()
+        with:
+          check_run: false
+          files: |
+            report.xml
