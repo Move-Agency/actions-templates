@@ -103,7 +103,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
 
       - name: Install Phrase CLI
-        if: hashFiles('.phraseapp.yml') != ''
+        if: hashFiles('.phraseapp.yml') != '' && !inputs.fast-runner
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew install phrase
