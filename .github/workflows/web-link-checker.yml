@@ -25,4 +25,4 @@ jobs:
             with:
               fail: true
               failIfEmpty: true
-              args: --base out/ --verbose --no-progress --exclude 'videos\.ctfassets\.net' 'images\.ctfassets\.net' './**/*.html' 
+              args: --base out/ --verbose --no-progress --exclude 'videos\.ctfassets\.net' --exclude 'images\.ctfassets\.net' './**/*.html' 
