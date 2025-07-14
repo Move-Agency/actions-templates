@@ -1,0 +1,73 @@
+name: Check
+on:
+  workflow_call:
+    inputs:
+      event_name:
+        description: 'The name of the event triggering the workflow'
+        required: true
+        type: string
+    secrets:
+      TERRAFORM_VAR_CHECKOUT_PRIVATE_KEY:
+        description: The key for submodule cloning
+        required: true
+    outputs:
+      workspaces:
+        description: List of workspaces that are relevant for the run
+        value: ${{ jobs.workspace_matrix.outputs.workspaces }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  workspace_matrix:
+    name: Generate PR matrix
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      workspaces: ${{ steps.matrix.outputs.workspaces }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Configure ssh keys
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
+        with:
+          ssh-private-key: |
+            ${{ secrets.TERRAFORM_VAR_CHECKOUT_PRIVATE_KEY }}
+
+      - name: checkout submodule
+        run: |
+          git submodule init
+          git submodule update
+
+      - name: Generate matrix
+        id: matrix
+        env:
+          EVENT: ${{ inputs.event_name }}
+          COMMIT_HASH: ${{ github.event.pull_request.head.sha || 'NONE' }}
+          BASE_HASH: ${{ github.event.pull_request.base.sha || 'NONE' }}
+        run: |
+          if [[ $EVENT != 'pull_request' ]]; then
+            echo "::warning::Not a pull request, testing everything!"
+            FILES=$(find vars/ -type f -iname '*.tfvars')
+            NAMES=$(echo "$FILES" | sed -E 's/vars\/(.*)\.tfvars/\1/')
+          else
+            # shellcheck disable=SC2046
+            FILES=$(git -C vars diff --name-only $(git rev-parse "${COMMIT_HASH}:vars" "${BASE_HASH}:vars"))
+            NAMES=$(echo "$FILES" | sed -E 's/(.*)\.tfvars/\1/')
+          fi
+          echo "$FILES"
+          echo "$NAMES"
+
+          # shellcheck disable=SC2086
+          JSON=$(jq -c -n "\$ARGS.positional" --args $NAMES)
+          echo "$JSON"
+          echo "workspaces=$JSON" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
