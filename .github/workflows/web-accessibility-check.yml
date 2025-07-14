@@ -39,7 +39,7 @@ jobs:
           echo "CHROMIUM_VERSION=$CHROMIUM_VERSION" >> "$GITHUB_ENV"
 
       - name: Setup Chrome
-        uses: browser-actions/setup-chrome@4c4260df9622eff1b597d1653b7a388b6b0f8341 # v2.0.0
+        uses: browser-actions/setup-chrome@b94431e051d1c52dcbe9a7092a4f10f827795416 # v2.1.0
         with:
           chrome-version: ${{ env.CHROMIUM_VERSION }}
 
