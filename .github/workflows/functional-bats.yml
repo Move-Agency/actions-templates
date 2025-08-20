@@ -59,7 +59,7 @@ jobs:
         run: mkdir -p "$GITHUB_WORKSPACE/vendor"
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@2282b6a082fc605c8320908a4cca3a5d1ca6c6fe # v2.35.1
+        uses: shivammathur/setup-php@20529878ed81ef8e78ddf08b480401e6101a850f # v2.35.3
         with:
           php-version: 8.1
           extensions: ${{ inputs.php-extensions }}
