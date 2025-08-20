@@ -69,7 +69,7 @@ jobs:
           echo "VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Set up Namespace yarn cache
-        uses: namespacelabs/nscloud-cache-action@a2c6b4830ed1830cc8ee3ee33f4210a856f4ae02 # v1.2.14
+        uses: namespacelabs/nscloud-cache-action@305bfa7ea980a858d511af4899414a84847c7991 # v1.2.16
         if: inputs.fast-runner
         with:
           cache: yarn
