@@ -2,4 +2,4 @@ rules:
   template-injection:
     ignore:
       - web-contentful-algolia-search.yml:64
-      - sqlfluff.yml:39
+      - sqlfluff.yml:45

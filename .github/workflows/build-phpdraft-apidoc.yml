@@ -2,6 +2,9 @@ name: Apidoc
 on:
   workflow_call:
 
+env:
+  SLACK_SEND_EVENTS: '["push", "schedule"]'
+
 jobs:
   build_apidoc:
     runs-on: ubuntu-latest
@@ -49,7 +52,7 @@ jobs:
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: ${{ failure() && contains(fromJSON('["push", "schedule"]'), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ failure() && contains(fromJSON(env.SLACK_SEND_EVENTS), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
