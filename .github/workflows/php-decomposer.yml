@@ -130,7 +130,7 @@ jobs:
         run: mkdir -p "$GITHUB_WORKSPACE/vendor"
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@8f8196743c19b9fcb7b11d926cfab463116c3ae9 # v2.35.5+4
+        uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f # v2.35.5+5
         with:
           php-version: ${{ matrix.php-versions }}
           tools: phpunit:${{ inputs.minimum-phpunit-version }}
@@ -214,7 +214,7 @@ jobs:
         run: composer install
 
       - name: Setup PHPCS
-        uses: shivammathur/setup-php@8f8196743c19b9fcb7b11d926cfab463116c3ae9 # v2.35.5+4
+        uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f # v2.35.5+5
         with:
           php-version: ${{ inputs.minimum-php-version }}
           tools: cs2pr, phpcs:3.x
@@ -299,7 +299,7 @@ jobs:
         run: mkdir -p "$GITHUB_WORKSPACE/vendor"
 
       - name: Setup PHPStan
-        uses: shivammathur/setup-php@8f8196743c19b9fcb7b11d926cfab463116c3ae9 # v2.35.5+4
+        uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f # v2.35.5+5
         with:
           php-version: ${{ inputs.minimum-php-version }}
           tools: phpstan:2.1.8
