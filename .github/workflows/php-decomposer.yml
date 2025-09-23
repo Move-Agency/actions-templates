@@ -379,10 +379,10 @@ jobs:
           args: >
             "-Dsonar.projectKey=${{ steps.variables.outputs.account }}:backend:${{ steps.variables.outputs.project }}"
             "-Dsonar.projectName=${{ steps.variables.outputs.project }}"
-            "-Dsonar.php.tests.reportPath=build/logs/junit.xml"
-            "-Dsonar.php.coverage.reportPaths=build/logs/clover.xml"
-            "-Dsonar.plugins.downloadOnlyRequired=true"
-            "-Dsonar.verbose=true"
+            -Dsonar.php.tests.reportPath=build/logs/junit.xml
+            -Dsonar.php.coverage.reportPaths=build/logs/clover.xml
+            -Dsonar.plugins.downloadOnlyRequired=true
+            -Dsonar.verbose=true
 
       - name: Post a message in a channel
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
