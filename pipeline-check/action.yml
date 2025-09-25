@@ -1,0 +1,16 @@
+name: Check Pipeline
+description: Check pipeline JSON agains the schema
+inputs:
+  file:
+    description: The file to check against the schema
+    required: true
+    type: string
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      id: result
+      run: pipx install check-jsonschema
+
+    - shell: bash
+      run: check-jsonschema --schemafile $GITHUB_ACTION_PATH/pipeline.schema.json ${{ inputs.file }}
