@@ -16,6 +16,10 @@ on:
         description: 'The contentful space ID'
         required: true
         type: string
+      migrations_dir:
+        description: 'Optional path to the directory containing migrations'
+        required: false
+        type: string
     secrets:
       amazon_role:
         description: The AWS role to assume to store state in S3
@@ -67,4 +71,11 @@ jobs:
           MIGRATIONS_STATE_FILE_STORAGE: s3
           MIGRATIONS_STATE_FILE_BUCKET: '${{ github.repository_owner }}-contentful-migrations'
           MIGRATIONS_STATE_FILE: migrated.json
-        run: yarn migrate
+        # Use a shell block so we only export MIGRATIONS_DIR when the caller provides one,
+        # preserving existing workflows that already inject the env before this step.
+        run: |
+          if [ -n "${{ inputs.migrations_dir }}" ]; then
+            export MIGRATIONS_DIR="${{ inputs.migrations_dir }}"
+          fi
+
+          yarn migrate
