@@ -17,7 +17,8 @@ on:
         required: true
         type: string
       migrations_dir:
-        description: 'Optional path to the directory containing migrations'
+        description: 'Path to the directory containing migrations'
+        default: './src/contentful/migrations'
         required: false
         type: string
     secrets:
@@ -68,15 +69,8 @@ jobs:
           CONTENTFUL_ENVIRONMENT: ${{ inputs.contentful_environment != '' && inputs.contentful_environment || inputs.environment }}
           CONTENTFUL_SPACE: ${{ inputs.contentful_space_id }}
           CONTENTFUL_MANAGEMENT_API_TOKEN: ${{ secrets.contentful_management_api_token }}
-          MIGRATIONS_DIR_INPUT: ${{ inputs.migrations_dir }}
+          MIGRATIONS_DIR: ${{ inputs.migrations_dir }}
           MIGRATIONS_STATE_FILE_STORAGE: s3
           MIGRATIONS_STATE_FILE_BUCKET: '${{ github.repository_owner }}-contentful-migrations'
           MIGRATIONS_STATE_FILE: migrated.json
-        # Use a shell block so we only export MIGRATIONS_DIR when the caller provides one,
-        # preserving existing workflows that already inject the env before this step.
-        run: |
-          if [ -n "$MIGRATIONS_DIR_INPUT" ]; then
-            export MIGRATIONS_DIR="$MIGRATIONS_DIR_INPUT"
-          fi
-
-          yarn migrate
+        run: yarn migrate
