@@ -13,7 +13,7 @@ on:
       codestyle-repo:
         required: false
         type: string
-        default: 'move-backend/stellr-coding-standard'
+        default: 'framna-nl-backend/stellr-coding-standard'
       codestyle-branch:
         required: false
         type: string
@@ -21,19 +21,19 @@ on:
       minimum-php-version:
         required: false
         type: string
-        default: '8.1'
+        default: '8.3'
       stable-php-versions:
         required: false
         type: string
-        default: '["8.1"]'
+        default: '["8.3"]'
       experimental-php-versions:
         required: false
         type: string
-        default: '["8.2", "8.3"]'
+        default: '["8.4", "8.5"]'
       minimum-phpunit-version:
         required: false
         type: string
-        default: '9.5.x'
+        default: '10.5.x'
       allow-style-failures:
         required: false
         type: boolean
