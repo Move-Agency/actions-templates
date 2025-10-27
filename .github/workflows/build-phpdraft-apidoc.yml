@@ -1,6 +1,9 @@
 name: Apidoc
 on:
   workflow_call:
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: false
 
 env:
   SLACK_SEND_EVENTS: '["push", "schedule"]'
