@@ -47,11 +47,14 @@ jobs:
     runs-on: ${{ inputs.fast-runner && 'namespace-profile-web-16-core' || 'ubuntu-latest' }}
     name: 'Build (node ${{ inputs.node-version }})'
     env:
-      ENVIRONMENT: ${{ inputs.environment }}
+      ENVIRONMENT_NAME: ${{ inputs.environment }}
     outputs:
       artifact: build-${{ inputs.node-version }}
       sub-artifact: build-sub-${{ inputs.node-version }}
     steps:
+      - name: Lowercase enviromnent name
+        run: |
+          echo "ENVIRONMENT=${ENVIRONMENT_NAME,,}" >> "$GITHUB_ENV"
       - uses: namespacelabs/nscloud-setup@d1c625762f7c926a54bd39252efff0705fd11c64 # v0.0.10
         if: inputs.fast-runner
 
