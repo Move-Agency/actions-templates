@@ -67,9 +67,13 @@ jobs:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.amazon_role }}
 
-      - name: Run migration step
+      - name: Get Contentful environment name
         env:
           CONTENTFUL_ENVIRONMENT_NAME: ${{ inputs.contentful_environment != '' && inputs.contentful_environment || inputs.environment }}
+        run: echo "CONTENTFUL_ENVIRONMENT=${CONTENTFUL_ENVIRONMENT_NAME,,}" >> "$GITHUB_ENV"
+
+      - name: Run migration step
+        env:
           CONTENTFUL_SPACE: ${{ inputs.contentful_space_id }}
           CONTENTFUL_MANAGEMENT_API_TOKEN: ${{ secrets.contentful_management_api_token }}
           MIGRATIONS_DIR: ${{ inputs.migrations_dir }}
@@ -77,5 +81,4 @@ jobs:
           MIGRATIONS_STATE_FILE_BUCKET: '${{ github.repository_owner }}-contentful-migrations'
           MIGRATIONS_STATE_FILE: migrated.json
         run: |
-          echo "CONTENTFUL_ENVIRONMENT=${CONTENTFUL_ENVIRONMENT_NAME,,}" >> "$GITHUB_ENV"
           yarn migrate

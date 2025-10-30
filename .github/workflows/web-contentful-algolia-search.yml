@@ -55,20 +55,23 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
 
+      - name: Get Contentful environment name
+        env:
+          CONTENTFUL_ENVIRONMENT_NAME: ${{ inputs.environment }}
+        run: echo "CONTENTFUL_ENVIRONMENT=${CONTENTFUL_ENVIRONMENT_NAME,,}" >> "$GITHUB_ENV"
+
       - name: Get correct Algolia index
         id: get_algolia_index
         env:
-          CONTENTFUL_ENVIRONMENT_NAME: ${{ inputs.environment == 'production' && 'master' || inputs.environment }}
-        run: echo "algolia_index=contentful_${CONTENTFUL_ENVIRONMENT_NAME,,}" >> "$GITHUB_OUTPUT"
+          ALGOLIA_ENVIRONMENT_NAME: ${{ inputs.environment == 'production' && 'master' || inputs.environment }}
+        run: echo "algolia_index=contentful_${ALGOLIA_ENVIRONMENT_NAME,,}" >> "$GITHUB_OUTPUT"
 
       - name: Feed into search index
         env:
           CONTENTFUL_SPACE: ${{ inputs.contentful_space_id }}
-          CONTENTFUL_ENVIRONMENT_NAME: ${{ inputs.environment }}
           CONTENTFUL_ACCESS_TOKEN: ${{ secrets.contentful_access_token }}
           ALGOLIA_APP_ID: ${{ inputs.algolia_app_id }}
           ALGOLIA_WRITE_KEY: ${{ secrets.algolia_write_key }}
           ALGOLIA_INDEX: ${{ steps.get_algolia_index.outputs.algolia_index }}
         run: |
-          echo "CONTENTFUL_ENVIRONMENT=${CONTENTFUL_ENVIRONMENT_NAME,,}" >> "$GITHUB_ENV"
           yarn index-search '${{ toJSON(inputs.contentful_payload) }}'
