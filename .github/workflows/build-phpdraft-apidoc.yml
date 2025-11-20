@@ -33,16 +33,14 @@ jobs:
         run: |
           install -d build/apidoc/frontend
           phpdraft --file docs/apidoc/frontend/index.apib \
-                   --sort Structures \
-                   --openapi build/apidoc/frontend/openapi.json > build/apidoc/frontend/index.html
+                   --sort Structures > build/apidoc/frontend/index.html
 
       - name: Build Backend API documentation
         if: ${{ contains(steps.detect.outputs.docs, 'backend') }}
         run: |
           install -d build/apidoc/backend
           phpdraft --file docs/apidoc/backend/index.apib \
-                   --sort Structures \
-                   --openapi build/apidoc/backend/openapi.json > build/apidoc/backend/index.html
+                   --sort Structures  > build/apidoc/backend/index.html
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
