@@ -102,7 +102,7 @@ jobs:
         run: bats --recursive "$TEST_PATH" --print-output-on-failure --filter-tags '!mariadb:true' --report-formatter junit --output "$PWD"
 
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@34d7c956a59aed1bfebf31df77b8de55db9bbaaf # v2.21.0
+        uses: EnricoMi/publish-unit-test-result-action@27d65e188ec43221b20d26de30f4892fad91df2f # v2.22.0
         if: always()
         with:
           check_run: false
