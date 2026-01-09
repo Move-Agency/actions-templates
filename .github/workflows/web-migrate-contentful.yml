@@ -21,6 +21,11 @@ on:
         default: './src/contentful/migrations'
         required: false
         type: string
+      node-version:
+        description: 'Version of node to build on'
+        default: '22.x'
+        required: false
+        type: string
     secrets:
       amazon_role:
         description: The AWS role to assume to store state in S3
@@ -39,9 +44,6 @@ jobs:
     name: 'Contentful migration'
     env:
       ENVIRONMENT_NAME: ${{ inputs.environment }}
-    strategy:
-      matrix:
-        node-version: ['20.x']
     steps:
       - name: Lowercase enviromnent name
         run: |
@@ -54,13 +56,13 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ inputs.node-version }}
           registry-url: https://npm.pkg.github.com
           cache: yarn
       - name: Install dependencies
         run: yarn install --production=false --frozen-lockfile
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_PAT}}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
         with:
