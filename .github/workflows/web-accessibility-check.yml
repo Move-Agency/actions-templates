@@ -1,6 +1,12 @@
 name: Axe accessibility check
 on:
   workflow_call:
+    inputs:
+      node-version:
+        description: 'Version of node to build on'
+        default: '22.x'
+        required: false
+        type: string
     secrets:
       npm_pat:
         description: The PAT for NPM registry access
@@ -10,9 +16,6 @@ jobs:
   axe:
     runs-on: ubuntu-latest
     name: "Axe accessibility check"
-    strategy:
-      matrix:
-        node-version: ["20.x"]
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -22,13 +25,13 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ inputs.node-version }}
           registry-url: https://npm.pkg.github.com
           cache: yarn
       - name: Install dependencies
         run: yarn install --production=false --frozen-lockfile
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_PAT}}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
 
       - name: Get Chromium version
         run: |
@@ -49,7 +52,7 @@ jobs:
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           merge-multiple: true
-          name: build-${{ matrix.node-version }}
+          name: build-${{ inputs.node-version }}
           path: out
 
       - name: Install axe
