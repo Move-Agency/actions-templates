@@ -4,7 +4,7 @@ on:
     inputs:
         node-version:
           description: 'Version of node to build on'
-          default: '20.x'
+          default: '22.x'
           required: false
           type: string
     secrets:

@@ -22,7 +22,7 @@ on:
         type: string
       node-version:
         description: 'Version of node to deploy with'
-        default: '20.x'
+        default: '22.x'
         required: false
         type: string
       artifact-name:
