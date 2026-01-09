@@ -14,6 +14,10 @@ on:
         required: false
         type: string
         default: ''
+      php-version:
+        required: false
+        type: string
+        default: '8.1'
     secrets:
       SLACK_WEBHOOK_URL:
         required: false
@@ -66,7 +70,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2.35.5+5
         with:
-          php-version: 8.1
+          php-version: ${{ inputs.php-version }}
           extensions: ${{ inputs.php-extensions }}
           ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor', ${{ inputs.php-ini-settings }}
         env:
