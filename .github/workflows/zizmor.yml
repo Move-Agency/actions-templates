@@ -28,7 +28,9 @@ jobs:
         run: |
           curl -O "https://raw.githubusercontent.com/${{ env.ACTION_REPO }}/refs/heads/${{ env.ACTION_REF }}/shared-zizmor.yml"
           if [[ -f "zizmor.yml" ]]; then
+            echo "Found existing config: $(cat zizmor.yml)"
             tail -n +1 "zizmor.yml" >> "shared-zizmor.yml"
+            echo "New config: $(cat "shared-zizmor.yml")"
           fi
 
       - name: Run zizmor 🌈
