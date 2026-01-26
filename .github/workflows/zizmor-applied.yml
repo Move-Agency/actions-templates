@@ -17,3 +17,5 @@ jobs:
       contents: read
       actions: read
     uses: move-agency/actions-templates/.github/workflows/zizmor.yml@main
+    with:
+      config: shared
