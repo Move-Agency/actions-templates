@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       config:
-        default: ""
+        default: ''
         type: string
         required: false
 
@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
 
       - name: Download shared config
-        if: inputs.config == "shared"
+        if: inputs.config == 'shared'
         run: |
           curl -o https://raw.githubusercontent.com/${{ github.action_repository }}/refs/heads/${{ github.action_ref }}/shared-zizmor.yml
 
@@ -30,4 +30,4 @@ jobs:
         with:
           advanced-security: false
           annotations: true
-          config: ${{ inputs.config == "shared" && "shared-zizmor.yml" || "" }}
+          config: ${{ inputs.config == 'shared' && 'shared-zizmor.yml' || '' }}
