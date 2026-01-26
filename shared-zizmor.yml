@@ -1,0 +1,7 @@
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        move-agency/actions-templates: any
+        move-agency/actions-templates/.github/workflows/actionlint.yml: any
+        move-agency/actions-templates/.github/workflows/zizmor.yml: any
