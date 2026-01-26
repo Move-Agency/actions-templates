@@ -16,4 +16,6 @@ jobs:
       # required for workflows in private repositories
       contents: read
       actions: read
-    uses: move-agency/actions-templates/.github/workflows/zizmor.yml@main
+    uses: move-agency/actions-templates/.github/workflows/zizmor.yml@feat/zizmor/shared-config
+    with:
+      config: shared

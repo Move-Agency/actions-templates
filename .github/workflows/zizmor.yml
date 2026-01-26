@@ -2,6 +2,11 @@ name: GitHub Actions Security Analysis with zizmor 🌈
 
 on:
   workflow_call:
+    inputs:
+      config:
+        default: ''
+        type: string
+        required: false
 
 jobs:
   zizmor:
@@ -9,13 +14,29 @@ jobs:
     permissions:
       contents: read
       actions: read
+    env:
+      ACTION_REPO: ${{ github.repository }}
+      ACTION_REF: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
 
+      - name: Download shared config
+        if: inputs.config == 'shared'
+        run: |
+          curl -O "https://raw.githubusercontent.com/${{ env.ACTION_REPO }}/refs/heads/${{ env.ACTION_REF }}/shared-zizmor.yml"
+          if [[ -f "zizmor.yml" ]]; then
+            echo "Found existing config: $(cat zizmor.yml)"
+            echo "" >> "shared-zizmor.yml"
+            tail -n +2 "zizmor.yml" >> "shared-zizmor.yml"
+            echo "New config: $(cat "shared-zizmor.yml")"
+          fi
+
       - name: Run zizmor 🌈
         uses: zizmorcore/zizmor-action@e639db99335bc9038abc0e066dfcd72e23d26fb4 # v0.3.0
         with:
           advanced-security: false
+          annotations: true
+          config: ${{ inputs.config == 'shared' && 'shared-zizmor.yml' || '' }}
