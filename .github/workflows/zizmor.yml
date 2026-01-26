@@ -16,7 +16,7 @@ jobs:
       actions: read
     env:
       ACTION_REPO: ${{ github.repository }}
-      ACTION_REF: ${{ github.head_ref }}
+      ACTION_REF: ${{ github.event == 'pull_request' && github.head_ref || github.ref }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
