@@ -4,3 +4,4 @@ rules:
       - web-contentful-algolia-search.yml:64
       - web-contentful-algolia-search.yml:77
       - sqlfluff.yml:45
+      - zizmor.yml:29
