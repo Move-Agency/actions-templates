@@ -14,6 +14,9 @@ jobs:
     permissions:
       contents: read
       actions: read
+    env:
+      ACTION_REPO: ${{ github.action_repository }}
+      ACTION_REF: ${{ github.action_ref }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -22,11 +25,8 @@ jobs:
 
       - name: Download shared config
         if: inputs.config == 'shared'
-        env:
-          REPO: ${{ github.action_repository }}
-          REF: ${{ github.action_ref }}
         run: |
-          curl -o "https://raw.githubusercontent.com/${{ env.REPO }}/refs/heads/${{ env.REF }}/shared-zizmor.yml"
+          curl -o "https://raw.githubusercontent.com/${{ env.ACTION_REPO }}/refs/heads/${{ env.ACTION_REF }}/shared-zizmor.yml"
 
       - name: Run zizmor 🌈
         uses: zizmorcore/zizmor-action@e639db99335bc9038abc0e066dfcd72e23d26fb4 # v0.3.0
