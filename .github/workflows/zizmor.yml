@@ -27,6 +27,9 @@ jobs:
         if: inputs.config == 'shared'
         run: |
           curl -O "https://raw.githubusercontent.com/${{ env.ACTION_REPO }}/refs/heads/${{ env.ACTION_REF }}/shared-zizmor.yml"
+          if [[ -f "zizmor.yml" ]]; then
+            tail -n +1 "zizmor.yml" >> "shared-zizmor.yml"
+          fi
 
       - name: Run zizmor 🌈
         uses: zizmorcore/zizmor-action@e639db99335bc9038abc0e066dfcd72e23d26fb4 # v0.3.0
