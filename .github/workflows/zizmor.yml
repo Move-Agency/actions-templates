@@ -22,8 +22,11 @@ jobs:
 
       - name: Download shared config
         if: inputs.config == 'shared'
+        env:
+          REPO: ${{ github.action_repository }}
+          REF: ${{ github.action_ref }}
         run: |
-          curl -o https://raw.githubusercontent.com/${{ github.action_repository }}/refs/heads/${{ github.action_ref }}/shared-zizmor.yml
+          curl -o "https://raw.githubusercontent.com/$REPO/refs/heads/$REF/shared-zizmor.yml"
 
       - name: Run zizmor 🌈
         uses: zizmorcore/zizmor-action@e639db99335bc9038abc0e066dfcd72e23d26fb4 # v0.3.0
