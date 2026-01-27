@@ -27,10 +27,18 @@ jobs:
         if: inputs.config == 'shared'
         run: |
           curl --fail --remote-name "https://raw.githubusercontent.com/${{ env.ACTION_REPO }}/refs/heads/${{ env.ACTION_REF }}/shared-zizmor.yml"
+          
+          old_config=""
           if [[ -f "zizmor.yml" ]]; then
-            echo "Found existing config: $(cat zizmor.yml)"
+            old_config=$(cat "zizmor.yml")
+          elif [[ -f ".github/zizmor.yml" ]]; then
+            old_config=$(cat ".github/zizmor.yml")
+          fi
+          
+          if [[ -n "$old_config" ]]; then
+            echo "Found existing config: $old_config"
             echo "" >> "shared-zizmor.yml"
-            tail -n +2 "zizmor.yml" >> "shared-zizmor.yml"
+            echo "$old_config" | tail -n +2 >> "shared-zizmor.yml"
             echo "New config: $(cat "shared-zizmor.yml")"
           fi
 
