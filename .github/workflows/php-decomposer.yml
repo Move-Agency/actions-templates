@@ -101,7 +101,7 @@ jobs:
       matrix: ${{ fromJson(fromJson(needs.generate-matrix.outputs.matrix)) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: true
 
@@ -117,7 +117,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: Decomposer checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
             repository: 'move-backend/decomposer'
 
@@ -191,12 +191,12 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: true
 
       - name: Codestyle checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
             repository: ${{ inputs.codestyle-repo }}
             ref: ${{ inputs.codestyle-branch }}
@@ -270,7 +270,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: true
 
@@ -286,7 +286,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: Decomposer checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
             repository: 'move-backend/decomposer'
 
@@ -358,7 +358,7 @@ jobs:
           echo "project=${REPO/$OWNER\//}" >> "$GITHUB_OUTPUT"
 
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
