@@ -33,7 +33,7 @@ jobs:
           persist-credentials: false
 
       - name: editorconfig-action
-        uses: editorconfig-checker/action-editorconfig-checker@6245a824737d548cb0eb2b678a81afeaf780ce1e # main from 2025-07-21
+        uses: editorconfig-checker/action-editorconfig-checker@4054fa83a075fdf090bd098bdb1c09aaf64a4169 # main from 2025-07-21
 
       - name: Check files
         run: |
