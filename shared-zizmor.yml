@@ -6,3 +6,12 @@ rules:
         move-agency/actions-templates/.github/workflows/actionlint.yml: any
         move-agency/actions-templates/.github/workflows/zizmor.yml: any
         move-agency/actions-templates/.github/workflows/typos.yml: any
+        move-agency/actions-templates/.github/workflows/web-lint.yml: any
+        move-agency/actions-templates/.github/workflows/web-test.yml: any
+        move-agency/actions-templates/.github/workflows/web-build.yml: any
+        move-agency/actions-templates/.github/workflows/web-link-checker.yml: any
+        move-agency/actions-templates/.github/workflows/web-accessibility-check.yml: any
+        move-agency/actions-templates/.github/workflows/web-contentful-algolia-search.yml: any
+        move-agency/actions-templates/.github/workflows/web-migrate-contentful.yml: any
+        move-agency/actions-templates/.github/workflows/web-vercel-deploy.yml: any
+        move-agency/actions-templates/.github/workflows/web-cloudfront-deploy.yml: any
