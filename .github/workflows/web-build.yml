@@ -3,28 +3,33 @@ on:
   workflow_call:
     inputs:
       environment:
-        description: 'The environment to deploy to'
-        default: 'Test'
+        description: "The environment to deploy to"
+        default: "Test"
+        required: false
+        type: string
+      contentful_environment:
+        description: "The Contentful environment to pull the data from"
+        default: ""
         required: false
         type: string
       cache_build:
-        description: 'Cache the build files'
+        description: "Cache the build files"
         default: false
         required: false
         type: boolean
       fast-runner:
-        description: 'Use a faster runner'
+        description: "Use a faster runner"
         default: false
         required: false
         type: boolean
       node-version:
-        description: 'Version of node to build on'
-        default: '22.x'
+        description: "Version of node to build on"
+        default: "22.x"
         required: false
         type: string
       sub-site-id:
-        description: 'Identifier of the sub-website'
-        default: ''
+        description: "Identifier of the sub-website"
+        default: ""
         required: false
         type: string
     secrets:
@@ -45,7 +50,7 @@ on:
 jobs:
   build:
     runs-on: ${{ inputs.fast-runner && 'namespace-profile-web-16-core' || 'ubuntu-latest' }}
-    name: 'Build (node ${{ inputs.node-version }})'
+    name: "Build (node ${{ inputs.node-version }})"
     env:
       ENVIRONMENT_NAME: ${{ inputs.environment }}
     outputs:
@@ -70,6 +75,14 @@ jobs:
           echo "GIT_DESCRIBE=$describe" >> "$GITHUB_ENV"
           version=$(echo "$describe" | sed -E 's/\-[a-z0-9]{5}//')
           echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Optionally set Contentful environment
+        env:
+          TMP_CONTENTFUL_ENVIRONMENT: ${{ inputs.contentful_environment }}
+        run: |
+          if [ -n "$TMP_CONTENTFUL_ENVIRONMENT" ]; then
+             echo "CONTENTFUL_ENVIRONMENT=${TMP_CONTENTFUL_ENVIRONMENT,,}" >> "$GITHUB_ENV"
+          fi
 
       - name: Set up Namespace yarn cache
         uses: namespacelabs/nscloud-cache-action@446d8f390563cd54ca27e8de5bdb816f63c0b706 # v1.2.21
