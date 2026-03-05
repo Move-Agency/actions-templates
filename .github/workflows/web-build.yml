@@ -85,7 +85,7 @@ jobs:
           fi
 
       - name: Set up Namespace yarn cache
-        uses: namespacelabs/nscloud-cache-action@446d8f390563cd54ca27e8de5bdb816f63c0b706 # v1.2.21
+        uses: namespacelabs/nscloud-cache-action@a90bb5d4b27522ce881c6e98eebd7d7e6d1653f9 # v1.4.2
         if: inputs.fast-runner
         with:
           cache: yarn
