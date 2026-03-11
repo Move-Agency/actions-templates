@@ -1,0 +1,34 @@
+name: Repo Security Analysis with trufflehog 🐽
+
+on:
+  workflow_call: ~
+
+jobs:
+  trufflehog:
+    runs-on: ubuntu-latest
+    permissions: 
+      contents: read 
+      id-token: write 
+      issues: write 
+      pull-requests: write
+    defaults:
+      run: 
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@v3.93.8
+        id: trufflehog
+        continue-on-error: true
+        with: 
+          path: ./ 
+          base: "${{ github.event.repository.default_branch }}" 
+          head: HEAD 
+
+      - name: Scan Results Status 
+        if: steps.trufflehog.outcome == 'failure' 
+        run: exit 1
