@@ -1,8 +1,6 @@
 name: Repo Security Analysis with trufflehog 🐽
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
     branches: ["**"]
 
