@@ -26,7 +26,9 @@ jobs:
       - name: Download shared config
         if: inputs.config == 'shared'
         run: |
-          curl --fail --remote-name "https://raw.githubusercontent.com/${{ env.ACTION_REPO }}/refs/heads/${{ env.ACTION_REF }}/shared-zizmor.yml"
+          curl --fail --remote-name \
+            --header "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://raw.githubusercontent.com/${{ env.ACTION_REPO }}/refs/heads/${{ env.ACTION_REF }}/shared-zizmor.yml"
           
           old_config=""
           if [[ -f "zizmor.yml" ]]; then
