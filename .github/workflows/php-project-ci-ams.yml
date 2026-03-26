@@ -1,0 +1,66 @@
+name: PHP Project CI
+on:
+  workflow_call:
+    inputs:
+      coding-standard:
+        required: true
+        type: string
+      minimum-php-version:
+        required: true
+        type: string
+      stable-php-versions:
+        required: true
+        type: string
+      experimental-php-versions:
+        required: false
+        type: string
+        default: '[]'
+      php-extensions:
+        required: false
+        type: string
+        default: ''
+      php-ini-settings:
+        required: false
+        type: string
+        default: ''
+
+    secrets:
+      COMPOSER_AUTH:
+        required: false
+      SLACK_WEBHOOK_URL:
+        required: false
+
+permissions: {}
+
+jobs:
+
+  php:
+    uses: lunr-php/actions-templates/.github/workflows/php-library.yml@5da5c7f4325777c1e3f342cd32baadf023680603 # 0.14.0
+    permissions:
+      contents: read
+      issues: read
+      checks: write
+      pull-requests: write
+    secrets:
+      COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    with:
+      coding-standard: ${{ inputs.coding-standard }}
+      minimum-php-version: ${{ inputs.minimum-php-version }}
+      stable-php-versions: ${{ inputs.stable-php-versions }}
+      experimental-php-versions: ${{ inputs.experimental-php-versions }}
+      php-extensions: ${{ inputs.php-extensions }}
+
+  validate-di:
+    uses: ./.github/workflows/php-validate-di.yml
+    needs: [ php ]
+    permissions:
+      contents: read
+    secrets:
+      COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    with:
+      stable-php-versions: ${{ inputs.stable-php-versions }}
+      experimental-php-versions: ${{ inputs.experimental-php-versions }}
+      php-extensions: ${{ inputs.php-extensions }}
+      php-ini-settings: ${{ inputs.php-ini-settings }}

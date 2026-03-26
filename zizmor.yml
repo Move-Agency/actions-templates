@@ -29,6 +29,9 @@ rules:
       - php-decomposer.yml:376
       - php-decomposer.yml:390
       - php-decomposer.yml:393
+      - php-validate-di.yml:83
+      - php-validate-di.yml:91
+      - php-validate-di.yml:94
       - sqlfluff.yml:53
       - sqlfluff.yml:56
       - tf-lint.yml:23
