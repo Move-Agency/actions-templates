@@ -1,0 +1,19 @@
+name: PR File Conflict Checker
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+concurrency:
+  group: "pr-file-conflict-checker-${{ github.ref }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pr-file-conflict-checker:
+    permissions:
+      pull-requests: write
+      contents: read
+    uses: move-agency/actions-templates/.github/workflows/pr-file-conflict-checker.yml@main

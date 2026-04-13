@@ -17,3 +17,4 @@ rules:
         move-agency/actions-templates/.github/workflows/web-vercel-deploy.yml: any
         move-agency/actions-templates/.github/workflows/web-cloudfront-deploy.yml: any
         move-agency/actions-templates/.github/workflows/web-sonarqube.yml: any
+        move-agency/actions-templates/.github/workflows/pr-file-conflict-checker.yml: any
