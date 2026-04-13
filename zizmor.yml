@@ -47,8 +47,8 @@ rules:
       - web-contentful-algolia-search.yml:72
       - web-contentful-algolia-search.yml:74
       - web-lint.yml:36
-      - pr-file-conflict-checker.yml:117
-      - pr-file-conflict-checker.yml:120
+      - pr-file-conflict-checker.yml:122
+      - pr-file-conflict-checker.yml:125
       - web-sonarqube.yml:41
       - web-sonarqube.yml:49
       - web-test.yml:39

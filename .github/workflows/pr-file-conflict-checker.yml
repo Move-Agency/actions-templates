@@ -5,12 +5,16 @@ on:
       required:
         type: boolean
         default: false
+      pr-limit:
+        description: "Maximum number of open PRs to check for file conflicts"
+        type: number
+        default: 100
     secrets:
       SLACK_WEBHOOK_URL:
         required: false
 
 env:
-  SLACK_SEND_EVENTS: '["push", "schedule"]'
+  SLACK_SEND_EVENTS: '["pull_request"]'
 
 jobs:
   pr-file-conflict-checker:
@@ -26,6 +30,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
+          PR_LIMIT: ${{ inputs.pr-limit }}
         run: |
           set -euo pipefail
 
@@ -46,8 +51,8 @@ jobs:
             exit 0
           fi
 
-          # Get all open PRs except the current one (up to 100)
-          open_prs=$(gh pr list --repo "$REPO" --state open --json number,title,url --limit 100 \
+          # Get all open PRs except the current one (up to pr-limit)
+          open_prs=$(gh pr list --repo "$REPO" --state open --json number,title,url --limit "$PR_LIMIT" \
             --jq "[.[] | select(.number != $PR_NUMBER)]")
           pr_count=$(echo "$open_prs" | jq 'length')
           echo "Found $pr_count other open PR(s) to check"
