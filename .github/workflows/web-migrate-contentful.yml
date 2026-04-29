@@ -4,12 +4,27 @@ on:
     inputs:
       environment:
         description: 'The environment to deploy to'
-        default: 'Test'
+        default: 'test'
+        required: false
+        type: string
+      contentful_environment:
+        description: 'The contentful environment to migrate to'
+        default: ''
         required: false
         type: string
       contentful_space_id:
         description: 'The contentful space ID'
         required: true
+        type: string
+      migrations_dir:
+        description: 'Path to the directory containing migrations'
+        default: './src/contentful/migrations'
+        required: false
+        type: string
+      node-version:
+        description: 'Version of node to build on'
+        default: '22.x'
+        required: false
         type: string
     secrets:
       amazon_role:
@@ -28,35 +43,44 @@ jobs:
     runs-on: ubuntu-latest
     name: 'Contentful migration'
     env:
-      ENVIRONMENT: ${{ inputs.environment }}
-    strategy:
-      matrix:
-        node-version: ['18.x']
+      ENVIRONMENT_NAME: ${{ inputs.environment }}
     steps:
+      - name: Lowercase enviromnent name
+        run: |
+          echo "ENVIRONMENT=${ENVIRONMENT_NAME,,}" >> "$GITHUB_ENV"
       - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          node-version: ${{ matrix.node-version }}
+          persist-credentials: false
+
+      - name: Setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ inputs.node-version }}
           registry-url: https://npm.pkg.github.com
           cache: yarn
       - name: Install dependencies
         run: yarn install --production=false --frozen-lockfile
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_PAT}}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.amazon_role }}
 
+      - name: Get Contentful environment name
+        env:
+          CONTENTFUL_ENVIRONMENT_NAME: ${{ inputs.contentful_environment != '' && inputs.contentful_environment || inputs.environment }}
+        run: echo "CONTENTFUL_ENVIRONMENT=${CONTENTFUL_ENVIRONMENT_NAME,,}" >> "$GITHUB_ENV"
+
       - name: Run migration step
         env:
-          CONTENTFUL_ENVIRONMENT: ${{ inputs.environment }}
           CONTENTFUL_SPACE: ${{ inputs.contentful_space_id }}
           CONTENTFUL_MANAGEMENT_API_TOKEN: ${{ secrets.contentful_management_api_token }}
+          MIGRATIONS_DIR: ${{ inputs.migrations_dir }}
           MIGRATIONS_STATE_FILE_STORAGE: s3
           MIGRATIONS_STATE_FILE_BUCKET: '${{ github.repository_owner }}-contentful-migrations'
           MIGRATIONS_STATE_FILE: migrated.json
-        run: yarn migrate
+        run: |
+          yarn migrate

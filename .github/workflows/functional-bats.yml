@@ -1,0 +1,130 @@
+name: Functional Tests
+on:
+  workflow_call:
+    inputs:
+      tests-path:
+        required: false
+        type: string
+        default: 'tests/functional/testsuites/'
+      php-extensions:
+        required: false
+        type: string
+        default: 'autoload_psr-pprkut/autoload-psr@0.2.0'
+      php-ini-settings:
+        required: false
+        type: string
+        default: ''
+      php-version:
+        required: false
+        type: string
+        default: '8.1'
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: false
+      SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES:
+        required: true
+
+env:
+  SLACK_SEND_EVENTS: '["push", "schedule"]'
+
+jobs:
+  functional-tests:
+    runs-on: ubuntu-latest
+    name: Functional Tests
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+      checks: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: true
+      
+      - name: Cache decomposer dependencies
+        id: cache-decomposer
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: | 
+            ${{ github.workspace }}/vendor
+            ${{ github.workspace }}/decomposer.autoload.inc.php
+          key: ${{ runner.os }}-${{ hashFiles('decomposer.json') }}
+          restore-keys: 
+            ${{ runner.os }}-
+
+      - name: Decomposer checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+            repository: 'framna-nl-backend/decomposer'
+
+            # Relative path under $GITHUB_WORKSPACE to place the repository
+            path: 'decomposer'
+            persist-credentials: true
+
+      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
+        name: Prepare decomposer target directory
+        run: mkdir -p "$GITHUB_WORKSPACE/vendor"
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # 2.37.0
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.php-extensions }}
+          ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor', ${{ inputs.php-ini-settings }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+      - name: Configure ssh keys
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
+
+      - name: Install dependencies
+        run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
+
+      - name: Setup Bats and bats libs
+        id: setup-bats
+        uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
+
+      - name: Run setup
+        run: ./support/setup.sh
+
+      - name: Set config overrides
+        run: |
+          cp -a config/conf.application.local.inc.php.sample config/conf.application.local.inc.php
+          sed -i "s|{{ environment }}|ci|" config/conf.application.local.inc.php
+
+      - name: Functional tests
+        shell: bash
+        env:
+          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
+          TERM: xterm
+          TEST_PATH: ${{ inputs.tests-path }}
+        run: bats --recursive "$TEST_PATH" --print-output-on-failure --filter-tags '!mariadb:true' --report-formatter junit --output "$PWD"
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
+        if: always()
+        with:
+          check_run: false
+          files: |
+            report.xml
+
+      - name: Post a message in a channel
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ failure() && contains(fromJSON(env.SLACK_SEND_EVENTS), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: Functional Tests ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: Functional Tests ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

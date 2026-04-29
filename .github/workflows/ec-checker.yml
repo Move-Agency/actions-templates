@@ -1,0 +1,65 @@
+name: EditorConfig Checker
+on:
+  workflow_call:
+    inputs:
+      args:
+        type: string
+        default: ''
+      excludes:
+        type: string
+        default: ''
+      files:
+        type: string
+        default: '.'
+      required:
+        type: boolean
+        default: false
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: false
+
+env:
+  SLACK_SEND_EVENTS: '["push", "schedule"]'
+
+jobs:
+  ec-checker:
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ !inputs.required }}
+    name: "EditorConfig Compliance"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: editorconfig-action
+        uses: editorconfig-checker/action-editorconfig-checker@840e866d93b8e032123c23bac69dece044d4d84c # main from 2025-07-21
+
+      - name: Check files
+        run: |
+          # Disabling quote requirements because we need the code injection and split file list
+          # shellcheck disable=SC2086,SC2046
+          editorconfig-checker \
+            ${EC_CHECKER_ARGS} \
+            --exclude="${EC_CHECKER_EXCLUDES}" \
+            $(git ls-files --exclude-standard "${EC_CHECKER_FILES}")
+        env:
+          EC_CHECKER_ARGS: "${{ inputs.args }}"
+          EC_CHECKER_EXCLUDES: "${{ inputs.excludes }}"
+          EC_CHECKER_FILES: "${{ inputs.files }}"
+
+      - name: Post a message in a channel
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ failure() && contains(fromJSON(env.SLACK_SEND_EVENTS), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: EditorConfig Compliance ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: EditorConfig Compliance ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

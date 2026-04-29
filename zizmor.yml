@@ -1,0 +1,52 @@
+rules:
+  template-injection:
+    ignore:
+      - web-contentful-algolia-search.yml:64
+      - web-contentful-algolia-search.yml:77
+      - sqlfluff.yml:45
+      - zizmor.yml:29
+  secrets-outside-env:
+    ignore:
+      - build-phpdraft-apidoc.yml:55
+      - build-phpdraft-apidoc.yml:58
+      - deploy-phpdraft-apidoc.yml:35
+      - ec-checker.yml:54
+      - ec-checker.yml:57
+      - functional-bats.yml:83
+      - functional-bats.yml:119
+      - functional-bats.yml:122
+      - lunr-locator.yml:103
+      - lunr-locator.yml:130
+      - lunr-locator.yml:133
+      - php-decomposer.yml:149
+      - php-decomposer.yml:173
+      - php-decomposer.yml:176
+      - php-decomposer.yml:252
+      - php-decomposer.yml:255
+      - php-decomposer.yml:315
+      - php-decomposer.yml:328
+      - php-decomposer.yml:331
+      - php-decomposer.yml:376
+      - php-decomposer.yml:390
+      - php-decomposer.yml:393
+      - php-validate-di.yml:83
+      - php-validate-di.yml:91
+      - php-validate-di.yml:94
+      - sqlfluff.yml:53
+      - sqlfluff.yml:56
+      - tf-lint.yml:23
+      - tf-lint.yml:41
+      - tf-matrix-submodule.yml:43
+      - typos.yml:38
+      - typos.yml:41
+      - web-accessibility-check.yml:34
+      - web-build.yml:119
+      - web-build.yml:130
+      - web-build.yml:156
+      - web-contentful-algolia-search.yml:56
+      - web-contentful-algolia-search.yml:72
+      - web-contentful-algolia-search.yml:74
+      - web-lint.yml:36
+      - web-sonarqube.yml:41
+      - web-sonarqube.yml:49
+      - web-test.yml:39

@@ -1,0 +1,21 @@
+name: GitHub Actions Security Analysis with zizmor 🌈
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["**"]
+
+concurrency:
+  group: "zizmor-${{ github.ref }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  workflow_syntax:
+    permissions:
+      # required for workflows in private repositories
+      contents: read
+      actions: read
+    uses: move-agency/actions-templates/.github/workflows/zizmor.yml@main
+    with:
+      config: shared

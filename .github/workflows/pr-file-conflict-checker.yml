@@ -1,0 +1,112 @@
+name: PR File Conflict Checker
+on:
+  workflow_call:
+    inputs:
+      required:
+        type: boolean
+        default: false
+      pr-limit:
+        description: "Maximum number of open PRs to check for file conflicts"
+        type: number
+        default: 100
+
+jobs:
+  pr-file-conflict-checker:
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ !inputs.required }}
+    name: "PR File Conflict Check"
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Check for conflicting open PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          PR_LIMIT: ${{ inputs.pr-limit }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$PR_NUMBER" ]]; then
+            echo "Not triggered by a pull request event, skipping check."
+            exit 0
+          fi
+
+          echo "Checking PR #$PR_NUMBER for file conflicts with other open PRs..."
+
+          # Get files changed in the current PR
+          current_files=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json files --jq '[.files[].path]')
+          current_count=$(echo "$current_files" | jq 'length')
+          echo "Current PR has $current_count changed file(s)"
+
+          if [[ "$current_count" -eq 0 ]]; then
+            echo "No files changed in the current PR, skipping check."
+            exit 0
+          fi
+
+          # Get all open PRs except the current one (up to pr-limit)
+          open_prs=$(gh pr list --repo "$REPO" --state open --json number,title,url --limit "$PR_LIMIT" \
+            --jq "[.[] | select(.number != $PR_NUMBER)]")
+          pr_count=$(echo "$open_prs" | jq 'length')
+          echo "Found $pr_count other open PR(s) to check"
+
+          conflict_found=false
+          conflicts_md=""
+
+          for ((i = 0; i < pr_count; i++)); do
+            pr_number=$(echo "$open_prs" | jq -r ".[$i].number")
+            pr_title=$(echo "$open_prs" | jq -r ".[$i].title")
+            pr_url=$(echo "$open_prs" | jq -r ".[$i].url")
+
+            echo "Checking against PR #$pr_number: $pr_title"
+
+            pr_files=$(gh pr view "$pr_number" --repo "$REPO" --json files --jq '[.files[].path]')
+
+            overlap=$(jq -n \
+              --argjson current "$current_files" \
+              --argjson other "$pr_files" \
+              '$current | map(select(. as $f | $other | any(. == $f)))')
+
+            overlap_count=$(echo "$overlap" | jq 'length')
+
+            if [[ "$overlap_count" -gt 0 ]]; then
+              conflict_found=true
+              echo "::warning::PR #$pr_number ('$pr_title') modifies $overlap_count of the same file(s)"
+
+              file_list=$(echo "$overlap" | jq -r '.[] | "- `" + . + "`"')
+              conflicts_md+=$(printf "### [#%s: %s](%s)\n\n%s\n\n" "$pr_number" "$pr_title" "$pr_url" "$file_list")
+            fi
+          done
+
+          conflict_marker="<!-- pr-file-conflict-checker -->"
+
+          if [[ "$conflict_found" == "true" ]]; then
+            comment_body=$(printf "%s\n## ⚠️ PR File Conflict Warning\n\nThis PR modifies files that are also modified by other open pull requests:\n\n%s\n> Please coordinate with the authors of the above PRs to avoid merge conflicts." \
+              "$conflict_marker" "$conflicts_md")
+
+            # Delete any previous conflict warning comment from this action
+            while IFS= read -r comment_id; do
+              [[ -z "$comment_id" ]] && continue
+              echo "Removing stale conflict comment $comment_id"
+              gh api --method DELETE "repos/$REPO/issues/comments/$comment_id"
+            done < <(gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
+              --jq ".[] | select(.body | contains(\"$conflict_marker\")) | .id")
+
+            echo "Posting conflict warning comment"
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$comment_body"
+
+            echo "File conflicts detected. See the PR comment for details."
+            exit 1
+          else
+            echo "No file conflicts found."
+
+            # Remove any stale conflict warning comment
+            while IFS= read -r comment_id; do
+              [[ -z "$comment_id" ]] && continue
+              echo "Removing resolved conflict comment $comment_id"
+              gh api --method DELETE "repos/$REPO/issues/comments/$comment_id"
+            done < <(gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
+              --jq ".[] | select(.body | contains(\"$conflict_marker\")) | .id")
+          fi
+

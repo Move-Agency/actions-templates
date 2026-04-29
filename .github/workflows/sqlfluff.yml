@@ -12,10 +12,16 @@ on:
       dialect:
         required: false
         type: string
-        default: 'mysql'
+        default: 'mariadb'
       required:
         type: boolean
         default: false
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: false
+
+env:
+  SLACK_SEND_EVENTS: '["push", "schedule"]'
 
 jobs:
   sqlfluff:
@@ -24,10 +30,12 @@ jobs:
     name: "SQLFluff (${{ inputs.identifier }})"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
             python-version: "3.11"
 
@@ -35,4 +43,22 @@ jobs:
         run: pip install sqlfluff
 
       - name: Lint SQL
-        run: sqlfluff lint --disable-progress-bar --dialect=${{ inputs.dialect }} --format=github-annotation-native ${{ inputs.path }}
+        env:
+          DIALECT: ${{ inputs.dialect }}
+        run: sqlfluff lint --disable-progress-bar --dialect="$DIALECT" --format=github-annotation-native ${{ inputs.path }}
+
+      - name: Post a message in a channel
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ failure() && contains(fromJSON(env.SLACK_SEND_EVENTS), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: SQLFluff (${{ inputs.identifier }}) ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: SQLFluff (${{ inputs.identifier }}) ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

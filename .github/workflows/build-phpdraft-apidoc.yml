@@ -1,6 +1,12 @@
 name: Apidoc
 on:
   workflow_call:
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: false
+
+env:
+  SLACK_SEND_EVENTS: '["push", "schedule"]'
 
 jobs:
   build_apidoc:
@@ -12,22 +18,49 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
-      - name: Create apidoc directories
+      - name: Detect API docs
+        id: detect
         run: |
-          install -d build/apidoc/frontend
-          install -d build/apidoc/backend
+          echo "docs=$(find docs/apidoc/ -type d -maxdepth 1 -exec basename {} \; | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
 
       - name: Build Frontend API documentation
-        run: phpdraft -f docs/apidoc/frontend/index.apib -s Structures > build/apidoc/frontend/index.html
+        if: ${{ contains(steps.detect.outputs.docs, 'frontend') }}
+        run: |
+          install -d build/apidoc/frontend
+          phpdraft --file docs/apidoc/frontend/index.apib \
+                   --sort Structures > build/apidoc/frontend/index.html
 
       - name: Build Backend API documentation
-        run: phpdraft -f docs/apidoc/backend/index.apib -s Structures > build/apidoc/backend/index.html
+        if: ${{ contains(steps.detect.outputs.docs, 'backend') }}
+        run: |
+          install -d build/apidoc/backend
+          phpdraft --file docs/apidoc/backend/index.apib \
+                   --sort Structures  > build/apidoc/backend/index.html
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: API-documentation
           path: build/apidoc
           if-no-files-found: error
           retention-days: 15
+
+      - name: Post a message in a channel
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ failure() && contains(fromJSON(env.SLACK_SEND_EVENTS), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: Apidoc ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: Apidoc ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

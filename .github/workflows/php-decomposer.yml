@@ -10,6 +10,10 @@ on:
         required: false
         type: string
         default: Stellr
+      codestyle-repo:
+        required: false
+        type: string
+        default: 'framna-nl-backend/stellr-coding-standard'
       codestyle-branch:
         required: false
         type: string
@@ -17,19 +21,19 @@ on:
       minimum-php-version:
         required: false
         type: string
-        default: '8.1'
+        default: '8.3'
       stable-php-versions:
         required: false
         type: string
-        default: '["8.1"]'
+        default: '["8.3"]'
       experimental-php-versions:
         required: false
         type: string
-        default: '["8.2", "8.3"]'
+        default: '["8.4", "8.5"]'
       minimum-phpunit-version:
         required: false
         type: string
-        default: '9.5.x'
+        default: '10.5.x'
       allow-style-failures:
         required: false
         type: boolean
@@ -59,6 +63,11 @@ on:
         required: true
       SONAR_TOKEN:
         required: false
+      SLACK_WEBHOOK_URL:
+        required: false
+
+env:
+  SLACK_SEND_EVENTS: '["push", "schedule"]'
 
 jobs:
   generate-matrix:
@@ -66,11 +75,16 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+    permissions:
+      contents: none
     steps:
       - name: Set matrix for build
         id: set-matrix
+        env:
+          STABLE_VERSIONS: ${{ inputs.stable-php-versions }}
+          EXPERIMENTAL_VERSIONS: ${{ inputs.experimental-php-versions }}
         run: |
-          JSON=$(jq --null-input --arg stable '${{ inputs.stable-php-versions }}' --arg experimental '${{ inputs.experimental-php-versions }}' '{"php-versions": $stable | fromjson, "experimental": [ false ], "include":[ $experimental | fromjson | .[] as $version | {"php-versions": $version, "experimental": true} ]} | tostring')
+          JSON=$(jq --null-input --arg stable "$STABLE_VERSIONS" --arg experimental "$EXPERIMENTAL_VERSIONS" '{"php-versions": $stable | fromjson, "experimental": [ false ], "include":[ $experimental | fromjson | .[] as $version | {"php-versions": $version, "experimental": true} ]} | tostring')
           echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
 
   phpunit:
@@ -78,15 +92,22 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     name: "PHP-${{ matrix.php-versions }}: PHPUnit"
     needs: generate-matrix
+    permissions:
+      contents: read
+      issues: read
+      checks: write
+      pull-requests: write
     strategy:
       matrix: ${{ fromJson(fromJson(needs.generate-matrix.outputs.matrix)) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: true
 
       - name: Cache decomposer dependencies
         id: cache-decomposer
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: | 
             ${{ github.workspace }}/vendor
@@ -96,30 +117,33 @@ jobs:
             ${{ runner.os }}-
 
       - name: Decomposer checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
             repository: 'move-backend/decomposer'
 
             # Relative path under $GITHUB_WORKSPACE to place the repository
             path: 'decomposer'
+            persist-credentials: false
 
       - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
         name: Prepare decomposer target directory
         run: mkdir -p "$GITHUB_WORKSPACE/vendor"
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # 2.37.0
         with:
           php-version: ${{ matrix.php-versions }}
           tools: phpunit:${{ inputs.minimum-phpunit-version }}
           extensions: ${{ inputs.php-extensions }}
           ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup problem matchers for PHP
         run: echo "::add-matcher::${{ runner.tool_cache }}/php.json"
 
       - name: Configure ssh keys
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: |
             ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
@@ -128,56 +152,131 @@ jobs:
         run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
 
       - name: Run PHPunit
-        run: phpunit --configuration tests/phpunit.xml --coverage-clover=coverage.xml
+        run: phpunit --configuration tests/phpunit.xml
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
+        with:
+          check_run: false
+          files: |
+              build/logs/junit.xml
 
       - name: Upload results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phpunit-logs-${{ matrix.php-versions }}
           path: build/logs/
+
+      - name: Post a message in a channel
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ failure() && contains(fromJSON(env.SLACK_SEND_EVENTS), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: PHP-${{ matrix.php-versions }}: PHPUnit ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: PHP-${{ matrix.php-versions }}: PHPUnit ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
   phpcs:
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.allow-style-failures }}
     name: "PHPCS"
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: true
 
       - name: Codestyle checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-            repository: 'lunr-php/lunr-coding-standard'
+            repository: ${{ inputs.codestyle-repo }}
             ref: ${{ inputs.codestyle-branch }}
+
+            # Clone submodules recursively. `true` should be enough, but better be safe
+            submodules: 'recursive'
 
             # Relative path under $GITHUB_WORKSPACE to place the repository
             path: 'codestyle'
+            persist-credentials: false
+
+      - name: Install dependencies
+        if: ${{ hashFiles('codestyle/composer.json') != '' }}
+        working-directory: 'codestyle'
+        run: composer install
 
       - name: Setup PHPCS
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # 2.37.0
         with:
           php-version: ${{ inputs.minimum-php-version }}
-          tools: cs2pr, phpcs
+          tools: cs2pr, phpcs:3.x
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run PHPCS
         run: |
-          phpcs -q --report=checkstyle \
-                   --standard="$GITHUB_WORKSPACE/codestyle/${{ inputs.codestyle }}" \
-                   --ignore=locate\.* \
-                   ${{ inputs.phpcs-whitelist }} \
-                   src/ | cs2pr
+          BOOTSTRAP=$([ -e "$GITHUB_WORKSPACE/codestyle/bootstrap.php" ] && echo "--bootstrap=$GITHUB_WORKSPACE/codestyle/bootstrap.php" || echo '')
+          export BOOTSTRAP
+          SLEVOMAT=$([ -d "$GITHUB_WORKSPACE/codestyle/third-party/slevomat/" ] && echo "--runtime-set installed_paths $GITHUB_WORKSPACE/codestyle/third-party/slevomat/" || echo '')
+          export SLEVOMAT
+
+          # Disabling quote requirements because we need the code injection
+          # shellcheck disable=SC2086
+          phpcs --report-full \
+                --report-checkstyle=checkstyle.xml \
+                $SLEVOMAT \
+                $BOOTSTRAP \
+                --standard="$GITHUB_WORKSPACE/codestyle/${CODESTYLE}" \
+                --ignore=locate\.* \
+                ${PHPCS_WHITELIST} \
+                src/
+        env:
+          CODESTYLE: ${{ inputs.codestyle }}
+          PHPCS_WHITELIST: ${{ inputs.phpcs-whitelist }}
+
+      - name: Convert checkstyle output to github style
+        if: always()
+        run: cs2pr ./checkstyle.xml
+
+      - name: Post a message in a channel
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ failure() && contains(fromJSON(env.SLACK_SEND_EVENTS), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: PHPCS ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: PHPCS ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
   phpstan:
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.allow-phpstan-failures }}
     name: "PHPStan"
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: true
 
       - name: Cache decomposer dependencies
         id: cache-decomposer
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: | 
             ${{ github.workspace }}/vendor
@@ -187,27 +286,30 @@ jobs:
             ${{ runner.os }}-
 
       - name: Decomposer checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
             repository: 'move-backend/decomposer'
 
             # Relative path under $GITHUB_WORKSPACE to place the repository
             path: 'decomposer'
+            persist-credentials: false
 
       - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
         name: Prepare decomposer target directory
         run: mkdir -p "$GITHUB_WORKSPACE/vendor"
 
       - name: Setup PHPStan
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # 2.37.0
         with:
           php-version: ${{ inputs.minimum-php-version }}
-          tools: phpstan
+          tools: phpstan:2.1.8
           extensions: autoload_psr-pprkut/autoload-psr@0.2.0
           ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure ssh keys
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: |
             ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
@@ -216,12 +318,33 @@ jobs:
         run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
 
       - name: Run PHPStan
-        run: phpstan analyze src --level ${{ inputs.phpstan-level }} --configuration tests/phpstan.neon.dist --autoload-file tests/phpstan.autoload.inc.php
+        env:
+          PHPSTAN_LEVEL: ${{ inputs.phpstan-level }}
+        run: phpstan analyze src --level "$PHPSTAN_LEVEL" --configuration tests/phpstan.neon.dist --autoload-file tests/phpstan.autoload.inc.php
+
+      - name: Post a message in a channel
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ failure() && contains(fromJSON(env.SLACK_SEND_EVENTS), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: PHPStan ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: PHPStan ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
   sonarqube:
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.allow-sonarqube-failures }}
-    name: SonarQube
+    name: "SonarQube"
     needs: [phpunit]
+    permissions:
+      contents: read
     steps:
       - name: Determine variables
         id: variables
@@ -229,31 +352,50 @@ jobs:
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.repository	}}"
           ACCOUNT_SLUG=${OWNER/move-/}
+          ACCOUNT_SLUG=${ACCOUNT_SLUG/framna-nl-/}
+          ACCOUNT_SLUG=${ACCOUNT_SLUG/framna-/}
           echo "account=${ACCOUNT_SLUG^^}" >> "$GITHUB_OUTPUT"
           echo "project=${REPO/$OWNER\//}" >> "$GITHUB_OUTPUT"
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Download logs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: phpunit-logs-${{ inputs.minimum-php-version }}
+          path: ${{ github.workspace }}/build/logs
 
       - name: SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@master
+        uses: sonarsource/sonarqube-scan-action@299e4b793aaa83bf2aba7c9c14bedbb485688ec4 # v7.1.0
         env:
           SONAR_HOST_URL: ${{ inputs.sonar-host-url }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         if: ${{ env.SONAR_TOKEN != '' }}
         with:
-          projectBaseDir: ./src/
           args: >
-            -Dsonar.projectKey=${{ steps.variables.outputs.account }}:backend:${{ steps.variables.outputs.project }}
-            -Dsonar.projectName=${{ steps.variables.outputs.project }}
+            "-Dsonar.projectKey=${{ steps.variables.outputs.account }}:backend:${{ steps.variables.outputs.project }}"
+            "-Dsonar.projectName=${{ steps.variables.outputs.project }}"
             -Dsonar.php.tests.reportPath=build/logs/junit.xml
             -Dsonar.php.coverage.reportPaths=build/logs/clover.xml
             -Dsonar.plugins.downloadOnlyRequired=true
             -Dsonar.verbose=true
+
+      - name: Post a message in a channel
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ failure() && contains(fromJSON(env.SLACK_SEND_EVENTS), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: SonarQube ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: SonarQube ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

@@ -1,0 +1,102 @@
+name: PHP DI Validation
+on:
+  workflow_call:
+    inputs:
+      stable-php-versions:
+        required: true
+        type: string
+      experimental-php-versions:
+        required: false
+        type: string
+        default: '[]'
+      php-extensions:
+        required: false
+        type: string
+        default: ''
+      php-ini-settings:
+        required: false
+        type: string
+        default: ''
+
+    secrets:
+      COMPOSER_AUTH:
+        required: false
+      SLACK_WEBHOOK_URL:
+        required: false
+
+env:
+  SLACK_SEND_EVENTS: '["push", "schedule"]'
+
+jobs:
+
+  generate-matrix:
+    name: Generate matrix for DI validation
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix for build
+        id: set-matrix
+        run: |
+          JSON=$(jq --null-input --arg stable "${STABLE_PHP_VERSIONS}" --arg experimental "${EXPERIMENTAL_PHP_VERSIONS}" '{"php-versions": $stable | fromjson, "experimental": [ false ], "include":[ $experimental | fromjson | .[] as $version | {"php-versions": $version, "experimental": true} ]} | tostring')
+          echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
+        env:
+          STABLE_PHP_VERSIONS: ${{ inputs.stable-php-versions }}
+          EXPERIMENTAL_PHP_VERSIONS: ${{ inputs.experimental-php-versions }}
+
+  validate-di:
+    runs-on: ubuntu-latest
+    needs: [ generate-matrix ]
+    strategy:
+      matrix: ${{ fromJson(fromJson(needs.generate-matrix.outputs.matrix)) }}
+    continue-on-error: ${{ matrix.experimental }}
+    name: "PHP-${{ matrix.php-versions }}: DI validation"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # 2.37.0
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: ${{ inputs.php-extensions }}
+          ini-values: ${{ inputs.php-ini-settings }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache composer dependencies
+        id: composer-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ${{ github.workspace }}/vendor
+          key: ${{ runner.os }}-php-${{ matrix.php-versions }}-${{ hashFiles('composer.json', 'composer.lock') }}
+
+      - name: Install dependencies
+        run: composer install
+        env:
+          COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+
+      - name: Run validation
+        run: composer run-script validate-di
+
+      - name: Post a message in a channel
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ failure() && !matrix.experimental && contains(fromJSON(env.SLACK_SEND_EVENTS), github.event_name) && env.SLACK_WEBHOOK_URL != '' }}
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "*${{ github.repository }} (${{ github.ref_name }})*: DI validation ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*${{ github.repository }} (${{ github.ref_name }})*: DI validation ${{ job.status }}\nURL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}\nWorkflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

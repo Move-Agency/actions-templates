@@ -1,0 +1,18 @@
+name: Repo Security Analysis with trufflehog 🐽
+
+on:
+  pull_request:
+    branches: ["**"]
+
+concurrency:
+  group: "trufflehog-${{ github.ref }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  trufflehog:
+    permissions: 
+      contents: read 
+      id-token: write 
+      issues: write 
+      pull-requests: write
+    uses: move-agency/actions-templates/.github/workflows/trufflehog.yml@main

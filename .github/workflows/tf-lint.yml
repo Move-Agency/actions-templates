@@ -1,0 +1,86 @@
+name: Check
+on:
+  workflow_call:
+    secrets:
+      amazon_role:
+        description: The AWS role ARN to assume
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TFC_AWS_RUN_ROLE_ARN: ${{ secrets.amazon_role }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: opentofu/setup-opentofu@fc711fa910b93cba0f3fbecaafc9f42fd0c411cb # v2.0.0
+
+      - name: OpenTofu fmt
+        run: tofu fmt -check -recursive -diff
+
+      - name: Remove profile from state
+        run: sed -i 's/profile = "framna-state"//' main.tf
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.amazon_role }}
+
+      - name: OpenTofu Init
+        run: tofu init
+
+      - name: OpenTofu Validate
+        run: tofu validate -no-color
+
+  trivy:
+    name: Trivy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Run Trivy vulnerability scanner in IaC mode
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          scan-type: config
+          format: table
+          hide-progress: true
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+          output: trivy.txt
+          exit-code: '1'
+
+      - name: Publish Trivy Output to Summary
+        if: always()
+        run: |
+          if [[ -s trivy.txt ]]; then
+            {
+              echo "### Security Output"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```terraform'
+              cat trivy.txt
+              echo '```'
+              echo "</details>"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
