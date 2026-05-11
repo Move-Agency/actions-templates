@@ -17,7 +17,7 @@ on:
       php-version:
         required: false
         type: string
-        default: '8.1'
+        default: '8.3'
     secrets:
       SLACK_WEBHOOK_URL:
         required: false
