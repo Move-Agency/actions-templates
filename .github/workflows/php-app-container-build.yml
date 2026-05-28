@@ -55,7 +55,7 @@ jobs:
           TARGETS: ${{ inputs.targets }}
         run: |
           set -euo pipefail
-          MATRIX=$(jq --raw-input --slurp --compact-output '{target: (split("[[:space:]]+"; null) | map(select(length > 0)))}' <<< "$TARGETS")
+          MATRIX=$(jq --raw-input --slurp --compact-output '{target: (split("[[:space:],]+"; null) | map(select(length > 0)))}' <<< "$TARGETS")
           if [ "$(jq '.target | length' <<< "$MATRIX")" -eq 0 ]; then
             echo "::error::targets input must contain at least one entry"
             exit 1
