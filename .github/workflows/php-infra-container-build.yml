@@ -33,7 +33,7 @@ env:
 
 jobs:
   configure:
-    if: ${{ github.event.repository.fork == false && github.event_name == 'push' && github.ref_protected }}
+    if: ${{ github.event.repository.fork == false && (github.event_name != 'push' || github.ref_protected) }}
     runs-on: ubuntu-latest
     name: "Configure build matrix"
     outputs:
@@ -80,12 +80,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure AWS credentials
+        if: ${{ github.ref_protected }}
         uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
         with:
           role-to-assume: ${{ secrets.CONTAINER_DEPLOY_ROLE }}
           aws-region: ${{ inputs.aws-region }}
 
       - name: Login to Amazon ECR
+        if: ${{ github.ref_protected }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419 # v2.1.5
 
@@ -95,7 +97,7 @@ jobs:
         with:
           images: |
             ${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.target }}
-            ${{ steps.login-ecr.outputs.registry }}/application-containers/${{ inputs.project-name }}-${{ matrix.target }}
+            ${{ github.ref_protected && format('{0}/application-containers/{1}-{2}', steps.login-ecr.outputs.registry, inputs.project-name, matrix.target) || '' }}
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
@@ -106,7 +108,7 @@ jobs:
       - name: Build and push container image
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
-          push: true
+          push: ${{ github.ref_protected }}
           context: .
           file: support/container/${{ matrix.target }}.containerfile
           platforms: linux/amd64,linux/arm64
