@@ -23,12 +23,35 @@ on:
         required: false
         type: string
         default: ''
+      aws-region:
+        required: true
+        type: string
+        description: AWS region for ECR
+      project-name:
+        required: true
+        type: string
+        description: Project name used as the image suffix prefix in ECR
+      app-container-targets:
+        required: true
+        type: string
+        description: |
+          Whitespace-separated list of container build targets carrying PHP application logic.
+          Each target name maps to support/container/<name>.containerfile and publishes as <project-name>-<name>.
+      infra-container-targets:
+        required: true
+        type: string
+        description: |
+          Whitespace-separated list of infrastructure / sidecar container build targets (no PHP vendor download).
+          Each target name maps to support/container/<name>.containerfile and publishes as <project-name>-<name>.
 
     secrets:
       COMPOSER_AUTH:
         required: false
       SLACK_WEBHOOK_URL:
         required: false
+      CONTAINER_DEPLOY_ROLE:
+        required: true
+        description: ARN for the AWS role that allows pushing to ECR
 
 permissions: {}
 
@@ -64,3 +87,36 @@ jobs:
       experimental-php-versions: ${{ inputs.experimental-php-versions }}
       php-extensions: ${{ inputs.php-extensions }}
       php-ini-settings: ${{ inputs.php-ini-settings }}
+
+  app-containers:
+    if: ${{ ( github.event_name == 'schedule' && github.event.repository.fork == false ) || github.event_name != 'schedule' }}
+    needs: [ validate-di ]
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    uses: ./.github/workflows/php-app-container-build.yml
+    secrets:
+      CONTAINER_DEPLOY_ROLE: ${{ secrets.CONTAINER_DEPLOY_ROLE }}
+      COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+    with:
+      aws-region: ${{ inputs.aws-region }}
+      project-name: ${{ inputs.project-name }}
+      targets: ${{ inputs.app-container-targets }}
+      minimum-php-version: ${{ inputs.minimum-php-version }}
+      php-extensions: ${{ inputs.php-extensions }}
+
+  infra-containers:
+    if: ${{ ( github.event_name == 'schedule' && github.event.repository.fork == false ) || github.event_name != 'schedule' }}
+    needs: [ validate-di ]
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    uses: ./.github/workflows/php-infra-container-build.yml
+    secrets:
+      CONTAINER_DEPLOY_ROLE: ${{ secrets.CONTAINER_DEPLOY_ROLE }}
+    with:
+      aws-region: ${{ inputs.aws-region }}
+      project-name: ${{ inputs.project-name }}
+      targets: ${{ inputs.infra-container-targets }}
