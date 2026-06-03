@@ -157,9 +157,18 @@ jobs:
           push: ${{ github.ref_protected }}
           context: .
           file: support/container/${{ matrix.target }}.containerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ github.ref_protected && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          sbom: true
+          sbom: ${{ github.ref_protected }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.target }}:latest
           cache-to: type=inline
+          outputs: ${{ (!github.ref_protected && (matrix.target == 'api' || matrix.target == 'cron')) && format('type=docker,dest=/tmp/{0}.tar', matrix.target) || '' }}
+
+      - name: Upload container image artifact
+        if: ${{ !github.ref_protected && (matrix.target == 'api' || matrix.target == 'cron') }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.target }}-image
+          path: /tmp/${{ matrix.target }}.tar
+          retention-days: 1
