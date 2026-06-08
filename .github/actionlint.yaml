@@ -1,0 +1,6 @@
+paths:
+  .github/workflows/**/*.{yml,yaml}:
+    ignore:
+      # `command` and `entrypoint` on `services.<id>` are supported by GitHub
+      # Actions but not yet recognized by actionlint's schema.
+      - 'unexpected key "(command|entrypoint)" for "services" section'
