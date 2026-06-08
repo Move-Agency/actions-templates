@@ -1,0 +1,193 @@
+name: Functional Tests
+on:
+  workflow_call:
+    inputs:
+      project-name:
+        required: true
+        type: string
+        description: 'Lowercase project name. Drives image names, container names, MySQL database, and uppercased env var prefix.'
+      minimum-php-version:
+        required: false
+        type: string
+        default: '8.3'
+      php-extensions:
+        required: false
+        type: string
+        default: ''
+      php-api-memory-limit:
+        required: false
+        type: string
+        default: '512M'
+      php-cron-memory-limit:
+        required: false
+        type: string
+        default: '512M'
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: false
+      COMPOSER_AUTH:
+        required: true
+
+env:
+  SLACK_SEND_EVENTS: '["push", "schedule"]'
+
+jobs:
+  functional-tests:
+    runs-on: ubuntu-latest
+    name: Functional Tests
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+      checks: write
+      packages: read
+      pull-requests: write
+    env:
+      PROJECT_NAME: ${{ inputs.project-name }}
+    services:
+      mysql:
+        image: mysql:8.0.44
+        command: >-
+          --sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+          --group-concat-max-len=1048576
+        env:
+          MYSQL_ROOT_PASSWORD: actions
+          MYSQL_DATABASE: ${{ inputs.project-name }}
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: true
+
+      - name: Load database schema
+        env:
+          MYSQL_PWD: actions
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_TCP_PORT: ${{ job.services.mysql.ports['3306'] }}
+        run: |
+          mysql -u root "${PROJECT_NAME}" < docs/database/schema.sql
+
+      - name: Download api image
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: api-image
+          path: /tmp/api
+
+      - name: Load container images
+        run: docker load -i /tmp/api/api.tar
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # 2.37.1
+        with:
+          php-version: ${{ inputs.minimum-php-version }}
+          extensions: ${{ inputs.php-extensions }}
+          ini-values: variables_order=EGPCS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache composer dependencies
+        id: composer-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ${{ github.workspace }}/vendor
+          key: ${{ runner.os }}-php-${{ inputs.minimum-php-version }}-${{ hashFiles('composer.json', 'composer.lock') }}
+
+      - name: Install dependencies
+        run: composer install
+        env:
+          COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+
+      - name: Run setup
+        run: ./support/setup.sh
+
+      - name: Import data for functional tests
+        env:
+          ENVIRONMENT: ci
+          PHP_MEMORY_LIMIT: ${{ inputs.php-cron-memory-limit }}
+          MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
+        run: |
+          export "${PROJECT_NAME^^}_DATABASE_RWHOST=127.0.0.1"
+          export "${PROJECT_NAME^^}_DATABASE_ROHOST=127.0.0.1"
+          export "${PROJECT_NAME^^}_DATABASE_PORT=${MYSQL_PORT}"
+          export "${PROJECT_NAME^^}_DATABASE_USERNAME=root"
+          export "${PROJECT_NAME^^}_DATABASE_PASSWORD=actions"
+          export "${PROJECT_NAME^^}_DATABASE_DATABASE=${PROJECT_NAME}"
+          export "${PROJECT_NAME^^}_DATABASE_DRIVER=mysql"
+          just import-functional-data
+
+      - name: Start API container
+        env:
+          MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
+          IMAGE_SHA: ${{ github.sha }}
+          PHP_MEMORY_LIMIT: ${{ inputs.php-api-memory-limit }}
+        run: |
+          docker run -d --name "${PROJECT_NAME}-api" \
+            --network host \
+            -e ENVIRONMENT=ci \
+            -e "PHP_MEMORY_LIMIT=${PHP_MEMORY_LIMIT}" \
+            -e "${PROJECT_NAME^^}_DATABASE_RWHOST=127.0.0.1" \
+            -e "${PROJECT_NAME^^}_DATABASE_ROHOST=127.0.0.1" \
+            -e "${PROJECT_NAME^^}_DATABASE_PORT=${MYSQL_PORT}" \
+            -e "${PROJECT_NAME^^}_DATABASE_USERNAME=root" \
+            -e "${PROJECT_NAME^^}_DATABASE_PASSWORD=actions" \
+            -e "${PROJECT_NAME^^}_DATABASE_DATABASE=${PROJECT_NAME}" \
+            -e "${PROJECT_NAME^^}_DATABASE_DRIVER=mysql" \
+            --pull=never \
+            "ghcr.io/framna-nl-dap/${PROJECT_NAME}-api:sha-${IMAGE_SHA}"
+
+      - name: Start Nginx container
+        run: |
+          docker run -d --name "${PROJECT_NAME}-nginx" \
+            --network host \
+            "ghcr.io/framna-nl-dap/${PROJECT_NAME}-nginx"
+
+      - name: Wait for API to be ready
+        run: |
+          for _ in $(seq 1 30); do
+            if curl -sfo /dev/null http://127.0.0.1/elb-status; then
+              echo "API ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::API did not become ready within 30s"
+          echo "--- ${PROJECT_NAME}-api logs ---"
+          docker logs "${PROJECT_NAME}-api" || true
+          echo "--- ${PROJECT_NAME}-nginx logs ---"
+          docker logs "${PROJECT_NAME}-nginx" || true
+          exit 1
+
+      - name: Setup k6
+        uses: grafana/setup-k6-action@db07bd9765aac508ef18982e52ab937fe633a065 # v1.2.1
+
+      - name: Run k6 functional tests
+        env:
+          BASE_URL: http://127.0.0.1
+        run: just functional-tests
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          echo "--- ${PROJECT_NAME}-api logs ---"
+          docker logs "${PROJECT_NAME}-api" || true
+          echo "--- ${PROJECT_NAME}-nginx logs ---"
+          docker logs "${PROJECT_NAME}-nginx" || true
+
+      - name: Stop containers
+        if: always()
+        run: |
+          docker rm -f "${PROJECT_NAME}-api" "${PROJECT_NAME}-nginx" 2>/dev/null || true
