@@ -17,11 +17,11 @@ on:
       php-api-memory-limit:
         required: false
         type: string
-        default: '512M'
+        default: '64M'
       php-cron-memory-limit:
         required: false
         type: string
-        default: '512M'
+        default: '64M'
     secrets:
       SLACK_WEBHOOK_URL:
         required: false

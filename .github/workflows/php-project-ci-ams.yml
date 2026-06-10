@@ -46,12 +46,12 @@ on:
       php-api-memory-limit:
         required: false
         type: string
-        default: '512M'
+        default: '64M'
         description: Memory limit for the API container.
       php-cron-memory-limit:
         required: false
         type: string
-        default: '512M'
+        default: '64M'
         description: Memory limit for the cron container.
 
     secrets:
