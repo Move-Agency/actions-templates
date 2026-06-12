@@ -68,7 +68,7 @@ permissions: {}
 jobs:
 
   php:
-    uses: lunr-php/actions-templates/.github/workflows/php-library.yml@c1391d5e0077a2dee6c151ea8be35edcb2b31af8 # 0.14.2
+    uses: lunr-php/actions-templates/.github/workflows/php-library.yml@53e01c4c30d98b283a227f33c2312afa1eada96c # 0.14.3
     permissions:
       contents: read
       issues: read
