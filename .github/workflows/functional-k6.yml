@@ -147,13 +147,13 @@ jobs:
             -e "${PROJECT_NAME^^}_DATABASE_DATABASE=${PROJECT_NAME}" \
             -e "${PROJECT_NAME^^}_DATABASE_DRIVER=mysql" \
             --pull=never \
-            "ghcr.io/framna-nl-dap/${PROJECT_NAME}-api:sha-${IMAGE_SHA}"
+            "ghcr.io/${{ github.repository }}-api:sha-${IMAGE_SHA}"
 
       - name: Start Nginx container
         run: |
           docker run -d --name "${PROJECT_NAME}-nginx" \
             --network host \
-            "ghcr.io/framna-nl-dap/${PROJECT_NAME}-nginx"
+            "ghcr.io/${{ github.repository }}-nginx"
 
       - name: Wait for API to be ready
         run: |
