@@ -2,10 +2,10 @@ name: PHP Infra Container Build
 on:
   workflow_call:
     inputs:
-      aws-region:
+      target-env:
         required: true
         type: string
-        description: AWS region for ECR
+        description: Deployment environment name used for tagging and AWS role assumption (e.g. staging, production)
       project-name:
         required: true
         type: string
@@ -20,10 +20,6 @@ on:
         required: false
         type: string
         default: 'namespace-profile-ubuntu-nl'
-    secrets:
-      CONTAINER_DEPLOY_ROLE:
-        required: true
-        description: ARN for the AWS role that allows pushing to ECR
 
 permissions:
   contents: read
@@ -56,6 +52,8 @@ jobs:
     needs: [configure]
     runs-on: ${{ inputs.runs-on }}
     name: "Build ${{ matrix.target }} Container"
+    environment:
+      name: ${{ inputs.target-env }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.configure.outputs.matrix) }}
@@ -83,8 +81,9 @@ jobs:
         if: ${{ github.ref_protected }}
         uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
         with:
-          role-to-assume: ${{ secrets.CONTAINER_DEPLOY_ROLE }}
-          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-session-name: github-deploy-${{ vars.AWS_BEANSTALK_ENVIRONMENT }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Login to Amazon ECR
         if: ${{ github.ref_protected }}
@@ -96,8 +95,10 @@ jobs:
         uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
         with:
           images: |
-            ${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.target }}
-            ${{ github.ref_protected && format('{0}/application-containers/{1}-{2}', steps.login-ecr.outputs.registry, inputs.project-name, matrix.target) || '' }}
+            ${{ env.REGISTRY }}/${{ github.repository }}
+            ${{ github.ref_protected && format('{0}/{1}', steps.login-ecr.outputs.registry, vars.AWS_ECR_REPOSITORY) || '' }}
+          flavor: |
+            prefix=${{ matrix.target }}-,onlatest=true
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
@@ -115,5 +116,5 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           sbom: true
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.target }}:latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:${{ matrix.target }}-latest
           cache-to: type=inline
