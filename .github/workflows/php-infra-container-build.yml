@@ -102,7 +102,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,format=long
+            type=sha,prefix=${{ matrix.target }}-sha-,format=long
             type=ref,event=branch,enable=${{ github.ref_name != 'master' }}
             type=ref,event=tag
 
