@@ -89,7 +89,7 @@ jobs:
         with:
           php-version: ${{ matrix.php-versions }}
           extensions: ${{ inputs.php-extensions }}
-          ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor', ${{ inputs.php-ini-settings }}
+          ini-values: include_path='.:/usr/share/php:${{ github.workspace }}/vendor', ${{ inputs.php-ini-settings }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

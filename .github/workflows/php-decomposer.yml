@@ -135,7 +135,7 @@ jobs:
           php-version: ${{ matrix.php-versions }}
           tools: phpunit:${{ inputs.minimum-phpunit-version }}
           extensions: ${{ inputs.php-extensions }}
-          ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor'
+          ini-values: include_path='.:/usr/share/php:${{ github.workspace }}/vendor'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -304,7 +304,7 @@ jobs:
           php-version: ${{ inputs.minimum-php-version }}
           tools: phpstan:2.1.8
           extensions: autoload_psr-pprkut/autoload-psr@0.2.0
-          ini-values: include_path='.:/usr/share/php:$GITHUB_WORKSPACE/vendor'
+          ini-values: include_path='.:/usr/share/php:${{ github.workspace }}/vendor'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
