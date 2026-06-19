@@ -71,12 +71,14 @@ jobs:
           mysql -u root "${PROJECT_NAME}" < docs/database/schema.sql
 
       - name: Download api image
+        if: ${{ !github.ref_protected }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: api-image
           path: /tmp/api
 
       - name: Load container images
+        if: ${{ !github.ref_protected }}
         run: docker load -i /tmp/api/api.tar
 
       - name: Log in to the Container registry
@@ -146,14 +148,14 @@ jobs:
             -e "${PROJECT_NAME^^}_DATABASE_PASSWORD=actions" \
             -e "${PROJECT_NAME^^}_DATABASE_DATABASE=${PROJECT_NAME}" \
             -e "${PROJECT_NAME^^}_DATABASE_DRIVER=mysql" \
-            --pull=never \
-            "ghcr.io/${{ github.repository }}-api:sha-${IMAGE_SHA}"
+            --pull=${{ !github.ref_protected && 'never' || 'missing' }} \
+            "ghcr.io/${{ github.repository }}:api-sha-${IMAGE_SHA}"
 
       - name: Start Nginx container
         run: |
           docker run -d --name "${PROJECT_NAME}-nginx" \
             --network host \
-            "ghcr.io/${{ github.repository }}-nginx"
+            "ghcr.io/${{ github.repository }}:nginx-latest"
 
       - name: Wait for API to be ready
         run: |
