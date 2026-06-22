@@ -57,7 +57,7 @@ jobs:
         with:
           path: |
             ${{ github.workspace }}/vendor
-          key: ${{ runner.os }}-php-${{ inputs.minimum-php-version }}-${{ hashFiles('composer.json', 'composer.lock') }}
+          key: ${{ runner.os }}-php-${{ inputs.php-version }}-${{ hashFiles('composer.json', 'composer.lock') }}
 
       - name: Install dependencies
         run: composer install
