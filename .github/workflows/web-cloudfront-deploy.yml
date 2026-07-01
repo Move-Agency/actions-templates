@@ -22,12 +22,12 @@ on:
         type: string
       node-version:
         description: 'Version of node to deploy with'
-        default: '22.x'
+        default: '24.x'
         required: false
         type: string
       artifact-name:
         description: 'Artifact to deploy'
-        default: build-22.x
+        default: build-24.x
         required: false
         type: string
     secrets:
