@@ -23,10 +23,6 @@ on:
         required: false
         type: string
         default: ''
-      target-env:
-        required: true
-        type: string
-        description: Deployment environment name used for tagging and AWS role assumption (e.g. staging, production)
       project-name:
         required: true
         type: string
@@ -106,7 +102,6 @@ jobs:
     secrets:
       COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
     with:
-      target-env: ${{ inputs.target-env }}
       project-name: ${{ inputs.project-name }}
       targets: ${{ inputs.app-container-targets }}
       minimum-php-version: ${{ inputs.minimum-php-version }}
@@ -121,7 +116,6 @@ jobs:
       id-token: write
     uses: ./.github/workflows/php-infra-container-build.yml
     with:
-      target-env: ${{ inputs.target-env }}
       project-name: ${{ inputs.project-name }}
       targets: ${{ inputs.infra-container-targets }}
 
