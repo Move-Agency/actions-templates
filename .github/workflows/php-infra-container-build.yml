@@ -2,10 +2,6 @@ name: PHP Infra Container Build
 on:
   workflow_call:
     inputs:
-      target-env:
-        required: true
-        type: string
-        description: Deployment environment name used for tagging and AWS role assumption (e.g. staging, production)
       project-name:
         required: true
         type: string
@@ -52,8 +48,6 @@ jobs:
     needs: [configure]
     runs-on: ${{ inputs.runs-on }}
     name: "Build ${{ matrix.target }} Container"
-    environment:
-      name: ${{ inputs.target-env }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.configure.outputs.matrix) }}
@@ -77,26 +71,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Configure AWS credentials
-        if: ${{ github.ref_protected }}
-        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
-        with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          role-session-name: github-deploy-${{ vars.AWS_BEANSTALK_ENVIRONMENT }}
-          aws-region: ${{ vars.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        if: ${{ github.ref_protected }}
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2.1.6
-
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
         with:
           images: |
             ${{ env.REGISTRY }}/${{ github.repository }}
-            ${{ github.ref_protected && format('{0}/{1}', steps.login-ecr.outputs.registry, vars.AWS_ECR_REPOSITORY) || '' }}
           flavor: |
             prefix=${{ matrix.target }}-,onlatest=true
           tags: |
