@@ -9,7 +9,7 @@ on:
       php-extensions:
         required: false
         type: string
-        default: 'autoload_psr-pprkut/autoload-psr@0.2.0'
+        default: ''
       php-ini-settings:
         required: false
         type: string
@@ -21,7 +21,7 @@ on:
     secrets:
       SLACK_WEBHOOK_URL:
         required: false
-      SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES:
+      COMPOSER_AUTH:
         required: true
 
 env:
@@ -43,47 +43,26 @@ jobs:
         with:
           persist-credentials: true
       
-      - name: Cache decomposer dependencies
-        id: cache-decomposer
+      - name: Cache composer dependencies
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
-          path: | 
+          path: |
             ${{ github.workspace }}/vendor
-            ${{ github.workspace }}/decomposer.autoload.inc.php
-          key: ${{ runner.os }}-${{ hashFiles('decomposer.json') }}
-          restore-keys: 
-            ${{ runner.os }}-
-
-      - name: Decomposer checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-            repository: 'framna-nl-backend/decomposer'
-
-            # Relative path under $GITHUB_WORKSPACE to place the repository
-            path: 'decomposer'
-            persist-credentials: true
-
-      - if: ${{ steps.cache-decomposer.outputs.cache-hit != 'true' }}
-        name: Prepare decomposer target directory
-        run: mkdir -p "$GITHUB_WORKSPACE/vendor"
+          key: ${{ runner.os }}-php-${{ inputs.php-version }}-${{ hashFiles('composer.json', 'composer.lock') }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
         with:
           php-version: ${{ inputs.php-version }}
           extensions: ${{ inputs.php-extensions }}
-          ini-values: include_path='.:/usr/share/php:${{ github.workspace }}/vendor', ${{ inputs.php-ini-settings }}
+          ini-values: include_path='.:/usr/share/php', ${{ inputs.php-ini-settings }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
-      - name: Configure ssh keys
-        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.SSH_PRIVATE_KEY_FOR_CLONING_NONPUBLIC_BACKEND_GIT_REPOSITORIES }}
 
       - name: Install dependencies
-        run: DECOMPOSER_TARGET_DIR="$GITHUB_WORKSPACE/vendor" decomposer/bin/decomposer install
+        run: composer install
+        env:
+          COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
 
       - name: Setup Bats and bats libs
         id: setup-bats
