@@ -160,7 +160,7 @@ jobs:
       - name: Wait for API to be ready
         run: |
           for _ in $(seq 1 30); do
-            if curl -sfo /dev/null http://127.0.0.1/elb-status; then
+            if curl -sfo /dev/null http://127.0.0.1:8080/elb-status; then
               echo "API ready"
               exit 0
             fi
@@ -178,7 +178,7 @@ jobs:
 
       - name: Run k6 functional tests
         env:
-          BASE_URL: http://127.0.0.1
+          BASE_URL: http://127.0.0.1:8080
         run: just functional-tests
 
       - name: Dump container logs on failure
