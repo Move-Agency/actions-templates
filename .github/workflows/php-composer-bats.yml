@@ -48,6 +48,7 @@ jobs:
         with:
           php-version: ${{ inputs.php-version }}
           extensions: ${{ inputs.php-extensions }}
+          ini-values: ${{ inputs.php-ini-settings }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
