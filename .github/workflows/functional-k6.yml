@@ -137,8 +137,10 @@ jobs:
           IMAGE_SHA: ${{ github.sha }}
           PHP_MEMORY_LIMIT: ${{ inputs.php-api-memory-limit }}
         run: |
+          docker volume create "${PROJECT_NAME}-php-socket" >/dev/null
           docker run -d --name "${PROJECT_NAME}-api" \
             --network host \
+            -v "${PROJECT_NAME}-php-socket:/php-socket" \
             -e ENVIRONMENT=ci \
             -e "PHP_MEMORY_LIMIT=${PHP_MEMORY_LIMIT}" \
             -e "${PROJECT_NAME^^}_DATABASE_RWHOST=127.0.0.1" \
@@ -155,6 +157,7 @@ jobs:
         run: |
           docker run -d --name "${PROJECT_NAME}-nginx" \
             --network host \
+            -v "${PROJECT_NAME}-php-socket:/php-socket" \
             "ghcr.io/${{ github.repository }}:nginx-latest"
 
       - name: Wait for API to be ready
@@ -193,3 +196,4 @@ jobs:
         if: always()
         run: |
           docker rm -f "${PROJECT_NAME}-api" "${PROJECT_NAME}-nginx" 2>/dev/null || true
+          docker volume rm "${PROJECT_NAME}-php-socket" 2>/dev/null || true
