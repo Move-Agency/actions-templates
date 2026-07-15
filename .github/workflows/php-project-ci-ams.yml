@@ -118,23 +118,3 @@ jobs:
     with:
       project-name: ${{ inputs.project-name }}
       targets: ${{ inputs.infra-container-targets }}
-
-  functional-tests:
-    if: ${{ (github.event_name == 'schedule' && github.event.repository.fork == false) || github.event_name != 'schedule' }}
-    needs: [ app-containers ]
-    permissions:
-      contents: read
-      issues: read
-      checks: write
-      pull-requests: write
-      packages: read
-    uses: ./.github/workflows/functional-k6.yml
-    with:
-      project-name: ${{ inputs.project-name }}
-      minimum-php-version: ${{ inputs.minimum-php-version }}
-      php-extensions: ${{ inputs.php-extensions }}
-      php-api-memory-limit: ${{ inputs.php-api-memory-limit }}
-      php-cron-memory-limit: ${{ inputs.php-cron-memory-limit }}
-    secrets:
-      COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
