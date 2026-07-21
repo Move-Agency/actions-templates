@@ -53,6 +53,7 @@ jobs:
     name: "Build (node ${{ inputs.node-version }})"
     env:
       ENVIRONMENT_NAME: ${{ inputs.environment }}
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
     outputs:
       artifact: build-${{ inputs.node-version }}
       sub-artifact: build-sub-${{ inputs.node-version }}
@@ -115,8 +116,6 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --production=false --frozen-lockfile
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PAT }}
 
       - name: Install Phrase CLI
         if: hashFiles('.phraseapp.yml') != '' && !inputs.fast-runner
