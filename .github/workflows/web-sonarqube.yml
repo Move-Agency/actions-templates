@@ -1,49 +1,49 @@
 name: SonarQube Scan
 
 on:
-    workflow_call:
-        inputs:
-            node-version:
-                description: "Version of node to build on"
-                default: "22.x"
-                required: false
-                type: string
-        secrets:
-            npm_pat:
-                description: The PAT for NPM registry access
-                required: true
-            sonar_token:
-                description: The User Token as a replacement of the user login
-                required: true
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Version of node to build on"
+        default: "24.x"
+        required: false
+        type: string
+    secrets:
+      npm_pat:
+        description: The PAT for NPM registry access
+        required: true
+      sonar_token:
+        description: The User Token as a replacement of the user login
+        required: true
 
 jobs:
-    sonarqube:
-        runs-on: ubuntu-latest
-        name: "SonarQube scan (node ${{ inputs.node-version }})"
+  sonarqube:
+    runs-on: ubuntu-latest
+    name: "SonarQube scan (node ${{ inputs.node-version }})"
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.npm_pat }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@move-frontend"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --production=false --frozen-lockfile
+
+      - name: Run test coverage
+        run: yarn coverage
+
+      - name: Run SonarQube scan
+        run: yarn sonar
         env:
-            NODE_AUTH_TOKEN: ${{ secrets.npm_pat }}
-        steps:
-            - name: Checkout
-              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-              with:
-                  fetch-depth: 0
-                  persist-credentials: false
-
-            - name: Setup node
-              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-              with:
-                  node-version-file: .nvmrc
-                  registry-url: "https://npm.pkg.github.com"
-                  scope: "@move-frontend"
-                  cache: "yarn"
-
-            - name: Install dependencies
-              run: yarn install --production=false --frozen-lockfile
-
-            - name: Run test coverage
-              run: yarn coverage
-
-            - name: Run SonarQube scan
-              run: yarn sonar
-              env:
-                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
