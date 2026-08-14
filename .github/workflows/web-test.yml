@@ -20,7 +20,7 @@ jobs:
         node-version: ["24.x"]
         experimental: [false]
         include:
-          - node-version: "25.x"
+          - node-version: "26.x"
             experimental: true
     steps:
       - name: Checkout
