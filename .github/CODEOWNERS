@@ -1,0 +1,28 @@
+# Code owners for the shared GitHub Actions workflow templates.
+#
+# A team listed here is automatically requested for review on any PR that
+# touches the matching files (including Dependabot PRs). With branch
+# protection's "Require review from Code Owners" enabled, their approval is
+# required before merge. Patterns are evaluated top to bottom; the last
+# matching pattern wins.
+
+# Web / frontend workflow templates
+/.github/workflows/web-*.yml            @Move-Agency/web
+
+# Backend / PHP workflow templates
+/.github/workflows/php-*.yml            @Move-Agency/backend
+/.github/workflows/functional-*.yml     @Move-Agency/backend
+/.github/workflows/lunr-*.yml           @Move-Agency/backend
+/.github/workflows/phpunit-*.yml        @Move-Agency/backend
+/.github/workflows/build-phpdraft-apidoc.yml    @Move-Agency/backend
+/.github/workflows/deploy-phpdraft-apidoc.yml   @Move-Agency/backend
+/.github/workflows/sqlfluff.yml         @Move-Agency/backend
+
+# Shared CI, security and infrastructure tooling (used by both web and backend)
+/.github/workflows/actionlint*.yml                  @Move-Agency/ci-ops
+/.github/workflows/zizmor*.yml                       @Move-Agency/ci-ops
+/.github/workflows/trufflehog*.yml                   @Move-Agency/ci-ops
+/.github/workflows/pr-file-conflict-checker*.yml     @Move-Agency/ci-ops
+/.github/workflows/typos.yml                         @Move-Agency/ci-ops
+/.github/workflows/ec-checker.yml                    @Move-Agency/ci-ops
+/.github/workflows/tf-*.yml                          @Move-Agency/ci-ops
